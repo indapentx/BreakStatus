@@ -644,8 +644,9 @@
             snapshot.forEach(doc => {
               const entry = { id: doc.id, ...(doc.data() || {}) };
               entry.label = entry.label || entry.email || doc.id;
+              entry.userId = entry.userId || doc.id;
               state.roster.push(entry);
-              state.rosterMap.set(doc.id, entry);
+              state.rosterMap.set(entry.userId, entry);
             });
             rosterMeta.textContent = state.roster.length ? state.roster.length + ' people on the roster' : 'No roster entries yet';
             renderBoard();
@@ -682,7 +683,8 @@
           const offEntries = [];
 
           entries.forEach(person => {
-            const member = state.members ? state.members[person.id] : undefined;
+            const memberKey = person.userId || person.id;
+            const member = state.members ? state.members[memberKey] : undefined;
             if (member) {
               onEntries.push({ person, member });
             } else {
@@ -735,15 +737,33 @@
           if (!user) {
             return;
           }
-          const docRef = db.collection('passengers').doc(user.uid);
-          const snapshot = await docRef.get();
-          if (!snapshot.exists) {
-            await docRef.set({
-              label: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
-              email: user.email || '',
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+
+          const passengersRef = db.collection('passengers');
+          const personalDocRef = passengersRef.doc(user.uid);
+          const personalDoc = await personalDocRef.get();
+
+          if (personalDoc.exists) {
+            if (!personalDoc.data().userId) {
+              await personalDocRef.set({ userId: user.uid }, { merge: true });
+            }
+            return;
           }
+
+          // Legacy records might have been created with a custom document ID.
+          if (user.email) {
+            const legacySnapshot = await passengersRef.where('email', '==', user.email).limit(1).get();
+            if (!legacySnapshot.empty) {
+              await legacySnapshot.docs[0].ref.set({ userId: user.uid }, { merge: true });
+              return;
+            }
+          }
+
+          await personalDocRef.set({
+            label: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
+            email: user.email || '',
+            userId: user.uid,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
         };
 
         const updateAccountSummary = () => {
