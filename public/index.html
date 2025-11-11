@@ -468,35 +468,56 @@
           }
         };
 
-        const getCurrentUserRosterKey = () => {
+        const normalizeEmail = (value) => {
+          return value ? value.trim().toLowerCase() : null;
+        };
+
+        const findExistingMemberKey = () => {
+          if (!state.user || !state.members) {
+            return null;
+          }
+          const emailKey = normalizeEmail(state.user.email);
+          const keys = Object.keys(state.members);
+          for (let i = 0; i < keys.length; i++) {
+            const key = keys[i];
+            const member = state.members[key];
+            if (!member) continue;
+            if (member.userId && member.userId === state.user.uid) {
+              return key;
+            }
+            if (emailKey && member.email && normalizeEmail(member.email) === emailKey) {
+              return key;
+            }
+          }
+          return null;
+        };
+
+        const findRosterKey = () => {
           if (!state.user) {
             return null;
           }
-
           const uid = state.user.uid;
           if (state.rosterMap.has(uid)) {
             return uid;
           }
-
-          if (state.roster.length && state.user.email) {
-            const match = state.roster.find(person => {
-              if (!person.email) {
-                return false;
-              }
-              return person.email.toLowerCase() === state.user.email.toLowerCase();
-            });
+          const emailKey = normalizeEmail(state.user.email);
+          if (emailKey && state.roster.length) {
+            const match = state.roster.find(person => person.email && normalizeEmail(person.email) === emailKey);
             if (match) {
               return match.userId || match.id || uid;
             }
           }
-
           return uid;
+        };
+
+        const resolveMemberKey = () => {
+          return findExistingMemberKey() || findRosterKey();
         };
 
         const refreshPresenceButtons = () => {
           const datasetReady = state.membersLoaded && state.rosterLoaded;
-          const userKey = datasetReady ? getCurrentUserRosterKey() : null;
-          const memberEntry = userKey && state.members ? state.members[userKey] : undefined;
+          const memberKey = datasetReady ? findExistingMemberKey() : null;
+          const memberEntry = memberKey ? state.members[memberKey] : undefined;
           const pending = state.busActionPending;
           markOnBtn.disabled = !datasetReady || pending || Boolean(memberEntry);
           leaveBusBtn.disabled = !datasetReady || pending || !memberEntry;
@@ -831,7 +852,7 @@
           }
 
           const dayRef = db.collection('busDays').doc(state.dayKey);
-          const userKey = getCurrentUserRosterKey() || state.user.uid;
+          const userKey = resolveMemberKey() || state.user.uid;
           const rosterEntry = state.rosterMap.get(userKey);
           const label = rosterEntry?.label || state.user.displayName || state.user.email || 'Unnamed';
           const emailValue = rosterEntry?.email || state.user.email || (state.members[userKey] && state.members[userKey].email) || '';
