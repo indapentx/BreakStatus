@@ -424,6 +424,7 @@
           roster: [],
           rosterMap: new Map(),
           members: {},
+          membersLoaded: false,
           rosterUnsub: null,
           dayUnsub: null,
           dayKey: null
@@ -468,9 +469,10 @@
 
         const refreshPresenceButtons = (locked) => {
           const isAuthed = Boolean(state.user);
-          const isOnBus = Boolean(state.user && state.members && state.members[state.user.uid]);
-          markOnBtn.disabled = locked || !isAuthed || isOnBus;
-          leaveBusBtn.disabled = locked || !isAuthed || !isOnBus;
+          const membershipKnown = isAuthed && state.membersLoaded;
+          const isOnBus = membershipKnown && Boolean(state.members && state.members[state.user.uid]);
+          markOnBtn.disabled = locked || !membershipKnown || isOnBus;
+          leaveBusBtn.disabled = locked || !membershipKnown || !isOnBus;
         };
 
         const setMode = (mode) => {
@@ -608,12 +610,15 @@
           }
 
           state.dayKey = newKey;
+          state.membersLoaded = false;
+          refreshPresenceButtons(true);
           dayLabel.textContent = formatDayLabel();
 
           if (state.dayUnsub) {
             state.dayUnsub();
             state.dayUnsub = null;
           }
+          state.membersLoaded = false;
 
           if (!state.user) {
             return;
@@ -623,6 +628,7 @@
           state.dayUnsub = dayRef.onSnapshot(snapshot => {
             const data = snapshot.exists ? snapshot.data() : {};
             state.members = data.members || {};
+            state.membersLoaded = true;
             renderBoard();
           }, error => {
             console.error(error);
@@ -875,6 +881,7 @@
             clearDayListener();
             state.members = {};
             state.dayKey = null;
+            state.membersLoaded = false;
             rosterMeta.textContent = 'Sign in to load roster';
             setBoardFeedback('');
             accountSummary.textContent = '';
