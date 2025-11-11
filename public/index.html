@@ -23,31 +23,33 @@
       body {
         margin: 0;
         min-height: 100vh;
-        background: #f3f3f3;
+        background: #f4f4f4;
         color: #0f0f0f;
+        font-size: 16px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 40px 16px 60px;
       }
 
-      .layout {
-        width: min(1100px, 100%);
-        margin: 0 auto;
-        padding: 32px 16px 48px;
-        display: grid;
-        gap: 20px;
+      main.layout {
+        width: min(440px, 100%);
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
       }
 
-      @media (min-width: 960px) {
-        .layout {
-          grid-template-columns: 300px 1fr;
-          align-items: start;
-        }
+      body.is-authed main.layout {
+        width: min(960px, 100%);
       }
 
       .panel {
+        width: 100%;
         background: #fff;
         border: 1px solid #e4e4e4;
-        border-radius: 16px;
-        padding: 24px;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.04);
+        border-radius: 20px;
+        padding: clamp(24px, 4vw, 36px);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.06);
       }
 
       .panel h1,
@@ -295,7 +297,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="is-guest">
     <main class="layout">
       <section id="authPanel" class="panel auth-panel">
         <header>
@@ -370,6 +372,7 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        const shell = document.body;
         const authPanel = document.getElementById('authPanel');
         const boardPanel = document.getElementById('boardPanel');
         const authForm = document.getElementById('authForm');
@@ -456,6 +459,11 @@
           if (variant && variants.includes(variant)) {
             boardFeedback.classList.add('is-' + variant);
           }
+        };
+
+        const setShellState = (isAuthed) => {
+          shell.classList.toggle('is-authed', isAuthed);
+          shell.classList.toggle('is-guest', !isAuthed);
         };
 
         const setMode = (mode) => {
@@ -801,10 +809,14 @@
           });
         });
 
+        setShellState(false);
         setMode('signin');
 
         auth.onAuthStateChanged(async function (user) {
           state.user = user || null;
+
+          const isAuthed = Boolean(user);
+          setShellState(isAuthed);
 
           if (user) {
             authPanel.classList.add('hidden');
