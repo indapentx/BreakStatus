@@ -354,7 +354,7 @@
 
         <div class="actions">
           <button id="markOnBtn" class="primary-btn" type="button">I'm on the bus</button>
-          <button id="markOffBtn" class="ghost-btn" type="button">I'm not on the bus</button>
+          <button id="leaveBusBtn" class="ghost-btn" type="button">Leave the bus</button>
           <button id="signOutBtn" class="ghost-btn" type="button">Sign out</button>
         </div>
 
@@ -392,7 +392,7 @@
         const offCount = document.getElementById('offCount');
         const boardFeedback = document.getElementById('boardFeedback');
         const markOnBtn = document.getElementById('markOnBtn');
-        const markOffBtn = document.getElementById('markOffBtn');
+        const leaveBusBtn = document.getElementById('leaveBusBtn');
         const signOutBtn = document.getElementById('signOutBtn');
 
         const modeSettings = {
@@ -414,7 +414,7 @@
         };
 
         markOnBtn.disabled = true;
-        markOffBtn.disabled = true;
+        leaveBusBtn.disabled = true;
         signOutBtn.disabled = true;
 
         const state = {
@@ -464,6 +464,13 @@
         const setShellState = (isAuthed) => {
           shell.classList.toggle('is-authed', isAuthed);
           shell.classList.toggle('is-guest', !isAuthed);
+        };
+
+        const refreshPresenceButtons = (locked) => {
+          const isAuthed = Boolean(state.user);
+          const isOnBus = Boolean(state.user && state.members && state.members[state.user.uid]);
+          markOnBtn.disabled = locked || !isAuthed;
+          leaveBusBtn.disabled = locked || !isAuthed || !isOnBus;
         };
 
         const setMode = (mode) => {
@@ -721,6 +728,7 @@
           offCount.textContent = offEntries.length;
 
           updateAccountSummary();
+          refreshPresenceButtons(false);
         };
 
         const ensureRosterEntry = async (user) => {
@@ -778,8 +786,7 @@
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
               };
 
-          markOnBtn.disabled = true;
-          markOffBtn.disabled = true;
+          refreshPresenceButtons(true);
           setBoardFeedback(isOnBus ? 'Updating status…' : 'Clearing status…', 'info');
 
           dayRef.set(payload, { merge: true })
@@ -791,13 +798,12 @@
               setBoardFeedback(readableError(error), 'error');
             })
             .finally(() => {
-              markOnBtn.disabled = false;
-              markOffBtn.disabled = false;
+              refreshPresenceButtons(false);
             });
         };
 
         markOnBtn.addEventListener('click', () => updatePresence(true));
-        markOffBtn.addEventListener('click', () => updatePresence(false));
+        leaveBusBtn.addEventListener('click', () => updatePresence(false));
 
         signOutBtn.addEventListener('click', () => {
           signOutBtn.disabled = true;
@@ -811,6 +817,7 @@
 
         setShellState(false);
         setMode('signin');
+        refreshPresenceButtons(true);
 
         auth.onAuthStateChanged(async function (user) {
           state.user = user || null;
@@ -825,8 +832,7 @@
             await ensureRosterEntry(user);
             attachRosterListener();
             updateDayListener();
-            markOnBtn.disabled = false;
-            markOffBtn.disabled = false;
+            refreshPresenceButtons(false);
             signOutBtn.disabled = false;
           } else {
             authForm.reset();
@@ -846,8 +852,7 @@
             offList.innerHTML = '';
             onCount.textContent = '0';
             offCount.textContent = '0';
-            markOnBtn.disabled = true;
-            markOffBtn.disabled = true;
+            refreshPresenceButtons(true);
             signOutBtn.disabled = true;
           }
 
