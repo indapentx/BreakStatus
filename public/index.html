@@ -812,6 +812,18 @@
           dayRef.set(payload, { merge: true })
             .then(() => {
               setBoardFeedback(isOnBus ? 'Marked as on the bus.' : 'Marked as waiting.', 'success');
+              if (isOnBus) {
+                state.members = state.members || {};
+                state.members[state.user.uid] = {
+                  label,
+                  email: state.user.email || '',
+                  userId: state.user.uid,
+                  updatedAt: firebase.firestore.Timestamp.now()
+                };
+              } else if (state.members && state.members[state.user.uid]) {
+                delete state.members[state.user.uid];
+              }
+              renderBoard();
             })
             .catch(error => {
               console.error(error);
