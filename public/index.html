@@ -469,7 +469,7 @@
         const refreshPresenceButtons = (locked) => {
           const isAuthed = Boolean(state.user);
           const isOnBus = Boolean(state.user && state.members && state.members[state.user.uid]);
-          markOnBtn.disabled = locked || !isAuthed;
+          markOnBtn.disabled = locked || !isAuthed || isOnBus;
           leaveBusBtn.disabled = locked || !isAuthed || !isOnBus;
         };
 
