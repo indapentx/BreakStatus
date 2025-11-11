@@ -3,16 +3,17 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Trend ISG Access</title>
+    <title>Trend ISG · Bus Board</title>
 
     <script defer src="/__/firebase/12.5.0/firebase-app-compat.js"></script>
     <script defer src="/__/firebase/12.5.0/firebase-auth-compat.js"></script>
+    <script defer src="/__/firebase/12.5.0/firebase-firestore-compat.js"></script>
     <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
     <style>
       :root {
-        color: #000;
-        background-color: #fff;
+        color-scheme: light;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       }
 
       *, *::before, *::after {
@@ -22,140 +23,135 @@
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background: #0a0a0a;
-        color: #111;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
+        background: #f3f3f3;
+        color: #0f0f0f;
       }
 
-      main {
-        width: min(520px, 100%);
-        background: #fdfdfd;
-        border-radius: 20px;
-        padding: 40px;
-        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
-      }
-
-      header {
-        margin-bottom: 28px;
-      }
-
-      .eyebrow {
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        font-size: 0.75rem;
-        margin: 0 0 10px;
-        color: #555;
-      }
-
-      h1 {
-        margin: 0 0 8px;
-        font-size: 1.8rem;
-        color: #0b0b0b;
-      }
-
-      .subtitle {
-        margin: 0;
-        font-size: 0.95rem;
-        color: #444;
-        line-height: 1.5;
-      }
-
-      .mode-switcher {
+      .layout {
+        width: min(1100px, 100%);
+        margin: 0 auto;
+        padding: 32px 16px 48px;
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-bottom: 24px;
+        gap: 20px;
       }
 
-      .mode-switcher button {
+      @media (min-width: 960px) {
+        .layout {
+          grid-template-columns: 300px 1fr;
+          align-items: start;
+        }
+      }
+
+      .panel {
+        background: #fff;
+        border: 1px solid #e4e4e4;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.04);
+      }
+
+      .panel h1,
+      .panel h2,
+      .panel p {
+        margin: 0;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      /* Auth */
+      .auth-panel header {
+        margin-bottom: 16px;
+      }
+
+      .auth-panel header h1 {
+        font-size: 1.35rem;
+        margin-bottom: 6px;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 16px;
+      }
+
+      .tabs button {
+        flex: 1;
+        border: 1px solid #cfcfcf;
         border-radius: 999px;
-        border: 1px solid #111;
-        background: #f5f5f5;
-        color: #111;
+        background: #f8f8f8;
         padding: 10px 12px;
         font-weight: 600;
         cursor: pointer;
-        transition: background 0.2s ease, color 0.2s ease;
+        color: #0f0f0f;
       }
 
-      .mode-switcher button.active {
-        background: #111;
-        color: #fdfdfd;
+      .tabs button.active {
+        background: #0f0f0f;
+        color: #fff;
+        border-color: #0f0f0f;
       }
 
-      .mode-switcher button:disabled {
-        opacity: 0.4;
+      .tabs button:disabled {
+        opacity: 0.5;
         cursor: not-allowed;
       }
 
       form {
         display: flex;
         flex-direction: column;
-        gap: 18px;
+        gap: 16px;
       }
 
       label {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         font-weight: 600;
-        color: #0f0f0f;
-        margin-bottom: 6px;
+        color: #111;
+        margin-bottom: 4px;
         display: block;
       }
 
       input {
         width: 100%;
-        border: 1px solid #cfcfcf;
+        padding: 12px 14px;
         border-radius: 12px;
-        padding: 14px 16px;
+        border: 1px solid #dcdcdc;
         font-size: 1rem;
-        background: #f8f8f8;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        background: #fbfbfb;
       }
 
       input:focus {
         outline: none;
-        border-color: #000;
+        border-color: #111;
         background: #fff;
-        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
       }
 
       input:disabled {
-        background: #e9e9e9;
+        background: #ededed;
         cursor: not-allowed;
       }
 
-      button.primary {
+      .primary-btn {
         border: none;
         border-radius: 12px;
+        padding: 14px 18px;
         font-size: 1rem;
         font-weight: 600;
-        padding: 15px 18px;
         background: #111;
-        color: #fefefe;
+        color: #fff;
         cursor: pointer;
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
       }
 
-      button.primary:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-      }
-
-      button.primary:disabled {
-        opacity: 0.6;
+      .primary-btn:disabled {
+        opacity: 0.5;
         cursor: not-allowed;
-        box-shadow: none;
       }
 
       .feedback {
-        margin: 18px 0 0;
         min-height: 1.4em;
-        font-size: 0.95rem;
-        color: #333;
+        font-size: 0.92rem;
+        color: #444;
       }
 
       .feedback.hidden {
@@ -177,246 +173,332 @@
         font-style: italic;
       }
 
-      .authed {
-        margin-top: 24px;
-        padding: 18px;
-        border-radius: 16px;
-        border: 1px solid #d9d9d9;
-        background: #f4f4f4;
+      form[data-mode="signin"] .confirm-field,
+      form[data-mode="reset"] .password-field,
+      form[data-mode="reset"] .confirm-field {
+        display: none;
       }
 
-      .authed p {
-        margin: 0;
-        font-weight: 500;
+      /* Board */
+      .board-panel header {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 20px;
+      }
+
+      @media (min-width: 640px) {
+        .board-panel header {
+          flex-direction: row;
+          align-items: baseline;
+          justify-content: space-between;
+        }
+      }
+
+      .board-panel h1 {
+        font-size: 1.35rem;
+      }
+
+      .board-panel small {
+        color: #555;
+      }
+
+      .account-summary {
+        margin-bottom: 16px;
+        font-size: 0.95rem;
+        color: #333;
+      }
+
+      .board-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      @media (min-width: 640px) {
+        .board-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      .list-card {
+        border: 1px solid #e3e3e3;
+        border-radius: 12px;
+        padding: 16px;
+        min-height: 220px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .list-card h2 {
+        font-size: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 12px;
         color: #111;
       }
 
-      .authed-buttons {
-        margin-top: 14px;
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      li {
+        padding: 6px 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 0.95rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      li:last-child {
+        border-bottom: none;
+      }
+
+      .dim-text {
+        color: #666;
+        font-size: 0.85rem;
+      }
+
+      .actions {
+        margin-top: 18px;
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
       }
 
-      .authed-buttons button {
+      .actions button {
         flex: 1 1 160px;
       }
 
-      button.ghost {
+      .ghost-btn {
         border-radius: 12px;
         border: 1px solid #111;
         background: transparent;
-        color: #111;
-        padding: 15px 18px;
+        padding: 12px 16px;
+        font-size: 1rem;
         font-weight: 600;
         cursor: pointer;
       }
 
-      button.ghost:disabled {
+      .ghost-btn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
       }
 
-      .hidden {
-        display: none !important;
-      }
-
-      form[data-mode="signin"] .confirm-group,
-      form[data-mode="reset"] .password-group,
-      form[data-mode="reset"] .confirm-group {
-        display: none;
-      }
-
-      @media (max-width: 560px) {
-        body {
-          padding: 16px;
-        }
-
-        main {
-          padding: 28px;
-        }
-
-        .mode-switcher {
-          grid-template-columns: 1fr;
-        }
+      #boardFeedback {
+        margin-top: 12px;
+        font-size: 0.92rem;
+        color: #333;
       }
     </style>
   </head>
-  <body data-destination="/">
-    <main role="main">
-      <header>
-        <p class="eyebrow">Trend ISG</p>
-        <h1 id="modeTitle">Sign in</h1>
-        <p id="modeCopy" class="subtitle">Use your credentials to continue.</p>
-      </header>
+  <body>
+    <main class="layout">
+      <section id="authPanel" class="panel auth-panel">
+        <header>
+          <h1>Access Trend ISG</h1>
+          <p>Sign in, create an account, or request a reset.</p>
+        </header>
 
-      <div class="mode-switcher" role="tablist" aria-label="Authentication mode">
-        <button type="button" data-mode-button data-mode="signin" aria-pressed="true">Sign in</button>
-        <button type="button" data-mode-button data-mode="signup" aria-pressed="false">Create account</button>
-        <button type="button" data-mode-button data-mode="reset" aria-pressed="false">Reset password</button>
-      </div>
+        <div class="tabs" role="tablist" aria-label="Auth mode">
+          <button type="button" data-mode-button data-mode="signin" aria-pressed="true">Sign in</button>
+          <button type="button" data-mode-button data-mode="signup" aria-pressed="false">Create</button>
+          <button type="button" data-mode-button data-mode="reset" aria-pressed="false">Reset</button>
+        </div>
 
-      <form id="authForm" data-mode="signin" autocomplete="on" novalidate>
-        <div class="field-group">
-          <label for="email">Email address</label>
-          <input id="email" name="email" type="email" autocomplete="email" placeholder="you@trendisg.com" required>
-        </div>
-        <div class="field-group password-group">
-          <label for="password">Password</label>
-          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" minlength="6">
-        </div>
-        <div class="field-group confirm-group">
-          <label for="confirmPassword">Confirm password</label>
-          <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Re-enter your password" minlength="6">
-        </div>
-        <button class="primary" id="submitBtn" type="submit">Sign in</button>
-      </form>
+        <form id="authForm" data-mode="signin" novalidate>
+          <div class="field-group">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" required placeholder="you@trendisg.com">
+          </div>
+          <div class="field-group password-field">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" minlength="6" placeholder="Minimum 6 characters">
+          </div>
+          <div class="field-group confirm-field">
+            <label for="confirmPassword">Confirm password</label>
+            <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Repeat your password">
+          </div>
+          <button id="submitBtn" class="primary-btn" type="submit">Continue</button>
+        </form>
 
-      <p id="feedback" class="feedback hidden" role="status" aria-live="polite"></p>
+        <p id="authFeedback" class="feedback hidden" role="status" aria-live="polite"></p>
+      </section>
 
-      <div id="authedActions" class="authed hidden" aria-live="polite">
-        <p id="authedEmail"></p>
-        <div class="authed-buttons">
-          <button class="primary" id="enterSiteButton" type="button" disabled>Enter site</button>
-          <button class="ghost" id="signOutButton" type="button" disabled>Sign out</button>
+      <section id="boardPanel" class="panel board-panel hidden" aria-live="polite">
+        <header>
+          <div>
+            <h1>Bus board</h1>
+            <small>Resets daily. Today: <span id="dayLabel">—</span></small>
+          </div>
+          <small id="rosterMeta" class="dim-text">Sign in to load roster</small>
+        </header>
+
+        <p id="accountSummary" class="account-summary"></p>
+
+        <div class="board-grid">
+          <div class="list-card">
+            <h2>On the bus <span id="onCount">0</span></h2>
+            <ul id="onList"></ul>
+          </div>
+          <div class="list-card">
+            <h2>Waiting <span id="offCount">0</span></h2>
+            <ul id="offList"></ul>
+          </div>
         </div>
-      </div>
+
+        <div class="actions">
+          <button id="markOnBtn" class="primary-btn" type="button">I'm on the bus</button>
+          <button id="markOffBtn" class="ghost-btn" type="button">I'm not on the bus</button>
+          <button id="signOutBtn" class="ghost-btn" type="button">Sign out</button>
+        </div>
+
+        <p id="boardFeedback" class="feedback hidden"></p>
+      </section>
     </main>
 
     <script>
       document.addEventListener('DOMContentLoaded', function () {
         if (!window.firebase || !firebase.apps.length) {
-          console.error('Firebase failed to initialize. Check init.js.');
+          console.error('Firebase failed to initialize.');
           return;
         }
 
-        const modeSettings = {
-          signin: {
-            title: 'Sign in',
-            copy: 'Use your existing credentials to enter the site.',
-            button: 'Sign in',
-            pending: 'Signing in...'
-          },
-          signup: {
-            title: 'Create account',
-            copy: 'Provision a new Trend ISG account with email and password.',
-            button: 'Create account',
-            pending: 'Creating account...'
-          },
-          reset: {
-            title: 'Reset password',
-            copy: 'We will email you a reset link for your account.',
-            button: 'Send reset link',
-            pending: 'Sending reset email...'
-          }
-        };
-
         const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const authPanel = document.getElementById('authPanel');
+        const boardPanel = document.getElementById('boardPanel');
         const authForm = document.getElementById('authForm');
-        const modeTitle = document.getElementById('modeTitle');
-        const modeCopy = document.getElementById('modeCopy');
         const emailField = document.getElementById('email');
         const passwordField = document.getElementById('password');
         const confirmField = document.getElementById('confirmPassword');
         const submitBtn = document.getElementById('submitBtn');
+        const authFeedback = document.getElementById('authFeedback');
         const modeButtons = Array.from(document.querySelectorAll('[data-mode-button]'));
-        const feedbackEl = document.getElementById('feedback');
-        const authedActions = document.getElementById('authedActions');
-        const authedEmail = document.getElementById('authedEmail');
-        const enterButton = document.getElementById('enterSiteButton');
-        const signOutButton = document.getElementById('signOutButton');
 
-        const redirectParam = new URLSearchParams(window.location.search).get('redirect');
-        let destination = document.body.dataset.destination || '/';
+        const dayLabel = document.getElementById('dayLabel');
+        const rosterMeta = document.getElementById('rosterMeta');
+        const accountSummary = document.getElementById('accountSummary');
+        const onList = document.getElementById('onList');
+        const offList = document.getElementById('offList');
+        const onCount = document.getElementById('onCount');
+        const offCount = document.getElementById('offCount');
+        const boardFeedback = document.getElementById('boardFeedback');
+        const markOnBtn = document.getElementById('markOnBtn');
+        const markOffBtn = document.getElementById('markOffBtn');
+        const signOutBtn = document.getElementById('signOutBtn');
 
-        if (redirectParam) {
-          try {
-            const target = new URL(redirectParam, window.location.origin);
-            if (target.origin === window.location.origin) {
-              destination = target.pathname + target.search + target.hash;
-            }
-          } catch (error) {
-            console.warn('Ignoring invalid redirect parameter', error);
+        const modeSettings = {
+          signin: {
+            button: 'Sign in',
+            pending: 'Signing in…',
+            copy: 'Use existing credentials to continue.'
+          },
+          signup: {
+            button: 'Create account',
+            pending: 'Creating account…',
+            copy: 'Provision a new account.'
+          },
+          reset: {
+            button: 'Send reset link',
+            pending: 'Sending link…',
+            copy: 'Receive a password reset email.'
           }
-        }
+        };
+
+        markOnBtn.disabled = true;
+        markOffBtn.disabled = true;
+        signOutBtn.disabled = true;
+
+        const state = {
+          mode: 'signin',
+          loading: false,
+          user: null,
+          roster: [],
+          rosterMap: new Map(),
+          members: {},
+          rosterUnsub: null,
+          dayUnsub: null,
+          dayKey: null
+        };
 
         const variants = ['error', 'success', 'info'];
-        let currentMode = 'signin';
-        let isLoading = false;
 
-        const setFeedback = (message, variant) => {
-          variants.forEach(type => feedbackEl.classList.remove('is-' + type));
+        const setAuthFeedback = (message, variant) => {
+          variants.forEach(type => authFeedback.classList.remove('is-' + type));
           if (!message) {
-            feedbackEl.textContent = '';
-            feedbackEl.classList.add('hidden');
+            authFeedback.textContent = '';
+            authFeedback.classList.add('hidden');
             return;
           }
 
-          feedbackEl.textContent = message;
-          feedbackEl.classList.remove('hidden');
+          authFeedback.textContent = message;
+          authFeedback.classList.remove('hidden');
           if (variant && variants.includes(variant)) {
-            feedbackEl.classList.add('is-' + variant);
+            authFeedback.classList.add('is-' + variant);
           }
         };
 
-        const applyFieldAvailability = () => {
-          emailField.disabled = isLoading;
-          passwordField.disabled = isLoading || currentMode === 'reset';
-          confirmField.disabled = isLoading || currentMode !== 'signup';
-          passwordField.required = currentMode !== 'reset';
-          confirmField.required = currentMode === 'signup';
+        const setBoardFeedback = (message, variant) => {
+          variants.forEach(type => boardFeedback.classList.remove('is-' + type));
+          if (!message) {
+            boardFeedback.textContent = '';
+            boardFeedback.classList.add('hidden');
+            return;
+          }
+
+          boardFeedback.textContent = message;
+          boardFeedback.classList.remove('hidden');
+          if (variant && variants.includes(variant)) {
+            boardFeedback.classList.add('is-' + variant);
+          }
         };
 
-        const setMode = (mode, options = {}) => {
+        const setMode = (mode) => {
           if (!modeSettings[mode]) {
             return;
           }
 
-          currentMode = mode;
+          state.mode = mode;
           authForm.dataset.mode = mode;
-          modeTitle.textContent = modeSettings[mode].title;
-          modeCopy.textContent = modeSettings[mode].copy;
+          submitBtn.textContent = modeSettings[mode].button;
+          passwordField.value = '';
+          confirmField.value = '';
+          passwordField.required = mode !== 'reset';
+          confirmField.required = mode === 'signup';
           passwordField.setAttribute('autocomplete', mode === 'signup' ? 'new-password' : 'current-password');
-          if (!isLoading) {
-            submitBtn.textContent = modeSettings[mode].button;
-          }
 
-          modeButtons.forEach(btn => {
-            const active = btn.dataset.mode === mode;
-            btn.classList.toggle('active', active);
-            btn.setAttribute('aria-pressed', active);
+          modeButtons.forEach(button => {
+            const active = button.dataset.mode === mode;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', active);
           });
 
-          if (!isLoading) {
-            passwordField.value = '';
-            confirmField.value = '';
-          }
-
-          if (!options.preserveFeedback) {
-            setFeedback('');
-          }
-
-          applyFieldAvailability();
-        };
-
-        const setLoading = (state) => {
-          isLoading = state;
-          submitBtn.disabled = state;
-          modeButtons.forEach(btn => {
-            btn.disabled = state;
-          });
-          submitBtn.textContent = state ? modeSettings[currentMode].pending : modeSettings[currentMode].button;
-          applyFieldAvailability();
+          setAuthFeedback('');
         };
 
         modeButtons.forEach(btn => {
           btn.addEventListener('click', function () {
-            if (isLoading) {
+            if (state.loading) {
               return;
             }
             setMode(btn.dataset.mode);
           });
         });
+
+        const setLoading = (loading) => {
+          state.loading = loading;
+          submitBtn.disabled = loading;
+          emailField.disabled = loading;
+          passwordField.disabled = loading && state.mode !== 'reset';
+          confirmField.disabled = loading || state.mode !== 'signup';
+          modeButtons.forEach(btn => btn.disabled = loading);
+          submitBtn.textContent = loading ? modeSettings[state.mode].pending : modeSettings[state.mode].button;
+        };
 
         const readableError = (error) => {
           if (!error || !error.code) {
@@ -429,7 +511,7 @@
             case 'auth/invalid-email':
               return 'Enter a valid email address.';
             case 'auth/operation-not-allowed':
-              return 'This operation is currently unavailable.';
+              return 'This operation is not available.';
             case 'auth/user-disabled':
               return 'This account has been disabled.';
             case 'auth/user-not-found':
@@ -437,9 +519,13 @@
             case 'auth/wrong-password':
               return 'The password you entered is incorrect.';
             case 'auth/weak-password':
-              return 'Use at least six characters for your password.';
+              return 'Use at least six characters.';
             case 'auth/too-many-requests':
               return 'Too many attempts. Please wait and try again.';
+            case 'permission-denied':
+              return 'You do not have permission to perform that action.';
+            case 'unavailable':
+              return 'Service unavailable. Please try again.';
             default:
               return error.message.replace('Firebase: ', '');
           }
@@ -447,7 +533,7 @@
 
         authForm.addEventListener('submit', function (event) {
           event.preventDefault();
-          if (isLoading) {
+          if (state.loading) {
             return;
           }
 
@@ -456,81 +542,305 @@
           const confirmPassword = confirmField.value;
 
           if (!email) {
-            setFeedback('Enter an email address.', 'error');
+            setAuthFeedback('Enter an email address.', 'error');
             return;
           }
 
-          if (currentMode !== 'reset' && !password) {
-            setFeedback('Enter your password.', 'error');
+          if (state.mode !== 'reset' && !password) {
+            setAuthFeedback('Enter your password.', 'error');
             return;
           }
 
-          if (currentMode === 'signup' && password !== confirmPassword) {
-            setFeedback('Passwords must match.', 'error');
+          if (state.mode === 'signup' && password !== confirmPassword) {
+            setAuthFeedback('Passwords must match.', 'error');
             return;
           }
 
           setLoading(true);
-          setFeedback(modeSettings[currentMode].pending, 'info');
+          setAuthFeedback(modeSettings[state.mode].pending, 'info');
 
           let action;
-          if (currentMode === 'signin') {
+          if (state.mode === 'signin') {
             action = auth.signInWithEmailAndPassword(email, password);
-          } else if (currentMode === 'signup') {
+          } else if (state.mode === 'signup') {
             action = auth.createUserWithEmailAndPassword(email, password);
           } else {
             action = auth.sendPasswordResetEmail(email);
           }
 
-          action.then(function () {
-            if (currentMode === 'reset') {
-              setFeedback('If an account exists for that email, a reset link was sent.', 'success');
+          action.then(() => {
+            if (state.mode === 'reset') {
+              setAuthFeedback('If an account exists for that email, a reset link was sent.', 'success');
               authForm.reset();
-              setMode('signin', { preserveFeedback: true });
+              setMode('signin');
             }
-
-            if (currentMode === 'signup') {
-              setFeedback('Account created. You can now enter the site.', 'success');
-            }
-          }).catch(function (error) {
-            setFeedback(readableError(error), 'error');
-          }).finally(function () {
+          }).catch(error => {
+            setAuthFeedback(readableError(error), 'error');
+          }).finally(() => {
             setLoading(false);
           });
         });
 
-        auth.onAuthStateChanged(function (user) {
-          const isSignedIn = Boolean(user);
-          authedActions.classList.toggle('hidden', !isSignedIn);
-          enterButton.disabled = !isSignedIn;
-          signOutButton.disabled = !isSignedIn;
+        const getDayKey = (date = new Date()) => date.toLocaleDateString('en-CA');
+        const formatDayLabel = (date = new Date()) => new Intl.DateTimeFormat('en-US', {
+          weekday: 'short', month: 'short', day: 'numeric'
+        }).format(date);
 
-          if (isSignedIn) {
-            authedEmail.textContent = user.email ? 'Signed in as ' + user.email : 'Signed in.';
-            setFeedback('Authenticated. Continue when ready.', 'success');
-          } else {
-            authForm.reset();
-            setMode('signin');
-            setFeedback('');
+        const updateDayListener = () => {
+          const newKey = getDayKey();
+          if (state.dayKey === newKey) {
+            return;
           }
-        });
 
-        enterButton.addEventListener('click', function () {
-          enterButton.disabled = true;
-          window.location.assign(destination);
-        });
+          state.dayKey = newKey;
+          dayLabel.textContent = formatDayLabel();
 
-        signOutButton.addEventListener('click', function () {
-          signOutButton.disabled = true;
-          setFeedback('Signing out...', 'info');
+          if (state.dayUnsub) {
+            state.dayUnsub();
+            state.dayUnsub = null;
+          }
 
-          auth.signOut().catch(function (error) {
-            setFeedback(readableError(error), 'error');
-            signOutButton.disabled = false;
+          if (!state.user) {
+            return;
+          }
+
+          const dayRef = db.collection('busDays').doc(state.dayKey);
+          state.dayUnsub = dayRef.onSnapshot(snapshot => {
+            const data = snapshot.exists ? snapshot.data() : {};
+            state.members = data.members || {};
+            renderBoard();
+          }, error => {
+            console.error(error);
+            setBoardFeedback('Unable to load today\'s board.', 'error');
+          });
+        };
+
+        setInterval(updateDayListener, 60000);
+        updateDayListener();
+
+        const attachRosterListener = () => {
+          if (state.rosterUnsub) {
+            return;
+          }
+
+          state.rosterUnsub = db.collection('passengers').orderBy('label').onSnapshot(snapshot => {
+            state.roster = [];
+            state.rosterMap.clear();
+            snapshot.forEach(doc => {
+              const entry = { id: doc.id, ...(doc.data() || {}) };
+              entry.label = entry.label || entry.email || doc.id;
+              state.roster.push(entry);
+              state.rosterMap.set(doc.id, entry);
+            });
+            rosterMeta.textContent = state.roster.length ? state.roster.length + ' people on the roster' : 'No roster entries yet';
+            renderBoard();
+          }, error => {
+            console.error(error);
+            rosterMeta.textContent = 'Unable to load roster';
+          });
+        };
+
+        const detachRosterListener = () => {
+          if (state.rosterUnsub) {
+            state.rosterUnsub();
+            state.rosterUnsub = null;
+          }
+        };
+
+        const clearDayListener = () => {
+          if (state.dayUnsub) {
+            state.dayUnsub();
+            state.dayUnsub = null;
+          }
+        };
+
+        const renderBoard = () => {
+          if (!state.user) {
+            return;
+          }
+
+          onList.innerHTML = '';
+          offList.innerHTML = '';
+
+          const entries = state.roster.length ? state.roster : [];
+          const onEntries = [];
+          const offEntries = [];
+
+          entries.forEach(person => {
+            const member = state.members ? state.members[person.id] : undefined;
+            if (member) {
+              onEntries.push({ person, member });
+            } else {
+              offEntries.push({ person });
+            }
+          });
+
+          if (!onEntries.length) {
+            const placeholder = document.createElement('li');
+            placeholder.className = 'dim-text';
+            placeholder.textContent = 'No one on the bus yet.';
+            onList.appendChild(placeholder);
+          } else {
+            onEntries.forEach(({ person, member }) => {
+              const item = document.createElement('li');
+              item.textContent = person.label || person.email || 'Unnamed';
+              if (member && member.updatedAt && member.updatedAt.toDate) {
+                const time = document.createElement('span');
+                time.className = 'dim-text';
+                time.textContent = new Intl.DateTimeFormat('en-US', {
+                  hour: '2-digit', minute: '2-digit'
+                }).format(member.updatedAt.toDate());
+                item.appendChild(time);
+              }
+              onList.appendChild(item);
+            });
+          }
+
+          if (!offEntries.length) {
+            const placeholder = document.createElement('li');
+            placeholder.className = 'dim-text';
+            placeholder.textContent = entries.length ? 'Everyone is on board.' : 'Add people to the roster.';
+            offList.appendChild(placeholder);
+          } else {
+            offEntries.forEach(({ person }) => {
+              const item = document.createElement('li');
+              item.textContent = person.label || person.email || 'Unnamed';
+              offList.appendChild(item);
+            });
+          }
+
+          onCount.textContent = onEntries.length;
+          offCount.textContent = offEntries.length;
+
+          updateAccountSummary();
+        };
+
+        const ensureRosterEntry = async (user) => {
+          if (!user) {
+            return;
+          }
+          const docRef = db.collection('passengers').doc(user.uid);
+          const snapshot = await docRef.get();
+          if (!snapshot.exists) {
+            await docRef.set({
+              label: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
+              email: user.email || '',
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+        };
+
+        const updateAccountSummary = () => {
+          if (!state.user) {
+            accountSummary.textContent = '';
+            return;
+          }
+          const memberEntry = state.members ? state.members[state.user.uid] : undefined;
+          const status = memberEntry ? 'on the bus' : 'waiting';
+          accountSummary.textContent = (state.user.email || 'Signed in') + ' · currently ' + status + '.';
+        };
+
+        const updatePresence = (isOnBus) => {
+          if (!state.user) {
+            return;
+          }
+
+          if (!state.dayKey) {
+            setBoardFeedback('Preparing today\'s board…', 'info');
+            updateDayListener();
+            return;
+          }
+
+          const dayRef = db.collection('busDays').doc(state.dayKey);
+          const memberPath = 'members.' + state.user.uid;
+          const label = (state.rosterMap.get(state.user.uid) || {}).label || state.user.email || 'Unnamed';
+
+          const payload = isOnBus
+            ? {
+                [memberPath]: {
+                  label,
+                  email: state.user.email || '',
+                  userId: state.user.uid,
+                  updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                },
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+              }
+            : {
+                [memberPath]: firebase.firestore.FieldValue.delete(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+              };
+
+          markOnBtn.disabled = true;
+          markOffBtn.disabled = true;
+          setBoardFeedback(isOnBus ? 'Updating status…' : 'Clearing status…', 'info');
+
+          dayRef.set(payload, { merge: true })
+            .then(() => {
+              setBoardFeedback(isOnBus ? 'Marked as on the bus.' : 'Marked as waiting.', 'success');
+            })
+            .catch(error => {
+              console.error(error);
+              setBoardFeedback(readableError(error), 'error');
+            })
+            .finally(() => {
+              markOnBtn.disabled = false;
+              markOffBtn.disabled = false;
+            });
+        };
+
+        markOnBtn.addEventListener('click', () => updatePresence(true));
+        markOffBtn.addEventListener('click', () => updatePresence(false));
+
+        signOutBtn.addEventListener('click', () => {
+          signOutBtn.disabled = true;
+          setBoardFeedback('Signing out…', 'info');
+          auth.signOut().catch(error => {
+            console.error(error);
+            setBoardFeedback(readableError(error), 'error');
+            signOutBtn.disabled = false;
           });
         });
 
         setMode('signin');
+
+        auth.onAuthStateChanged(async function (user) {
+          state.user = user || null;
+
+          if (user) {
+            authPanel.classList.add('hidden');
+            boardPanel.classList.remove('hidden');
+            setBoardFeedback('Loading roster…', 'info');
+            await ensureRosterEntry(user);
+            attachRosterListener();
+            updateDayListener();
+            markOnBtn.disabled = false;
+            markOffBtn.disabled = false;
+            signOutBtn.disabled = false;
+          } else {
+            authForm.reset();
+            setMode('signin');
+            authPanel.classList.remove('hidden');
+            boardPanel.classList.add('hidden');
+            detachRosterListener();
+            clearDayListener();
+            state.members = {};
+            state.dayKey = null;
+            rosterMeta.textContent = 'Sign in to load roster';
+            setBoardFeedback('');
+            accountSummary.textContent = '';
+            state.roster = [];
+            state.rosterMap.clear();
+            onList.innerHTML = '';
+            offList.innerHTML = '';
+            onCount.textContent = '0';
+            offCount.textContent = '0';
+            markOnBtn.disabled = true;
+            markOffBtn.disabled = true;
+            signOutBtn.disabled = true;
+          }
+
+          updateAccountSummary();
+        });
       });
     </script>
   </body>
