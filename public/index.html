@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trend ISG · Sign in</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <script defer src="/__/firebase/12.5.0/firebase-app-compat.js"></script>
+    <script defer src="/__/firebase/12.5.0/firebase-auth-compat.js"></script>
+    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+
+    <style>
+      :root {
+        color-scheme: light;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+      }
+
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: radial-gradient(circle at 20% 20%, #1f47f5, #050b1f 70%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      main {
+        width: min(420px, 100%);
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 20px;
+        padding: 40px 32px 36px;
+        box-shadow: 0 30px 80px rgba(3, 7, 18, 0.45);
+      }
+
+      .brand {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .brand-logo {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        background: #111633;
+        color: #fff;
+        font-weight: 600;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: 0.08em;
+      }
+
+      h1 {
+        margin: 4px 0 2px;
+        font-size: 1.6rem;
+        color: #0f172a;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: #475569;
+        font-size: 0.95rem;
+        line-height: 1.4;
+      }
+
+      form {
+        margin-top: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #0f172a;
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      input {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid #cbd5f5;
+        padding: 14px 16px;
+        font-size: 1rem;
+        background: #f8fafc;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #2563eb;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+      }
+
+      input:disabled {
+        cursor: not-allowed;
+        background: #e2e8f0;
+      }
+
+      button {
+        border: none;
+        border-radius: 12px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 14px 18px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+        box-shadow: none;
+      }
+
+      .primary {
+        background: linear-gradient(120deg, #2563eb, #4c1d95);
+        color: #fff;
+        box-shadow: 0 15px 35px rgba(37, 99, 235, 0.35);
+      }
+
+      .primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 20px 40px rgba(37, 99, 235, 0.4);
+      }
+
+      .ghost {
+        background: transparent;
+        color: #0f172a;
+        border: 1px solid rgba(15, 23, 42, 0.2);
+      }
+
+      .feedback {
+        margin: 18px 0 0;
+        font-size: 0.95rem;
+        line-height: 1.4;
+        min-height: 1.4em;
+      }
+
+      .feedback.is-success {
+        color: #047857;
+      }
+
+      .feedback.is-error {
+        color: #b91c1c;
+      }
+
+      .feedback.is-info {
+        color: #2563eb;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .authed {
+        margin-top: 22px;
+        padding: 18px;
+        border-radius: 16px;
+        background: #eef2ff;
+        border: 1px solid rgba(37, 99, 235, 0.15);
+      }
+
+      .authed p {
+        margin: 0;
+        color: #0f172a;
+        font-weight: 500;
+      }
+
+      .authed-buttons {
+        margin-top: 14px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .authed-buttons button {
+        flex: 1 1 150px;
+      }
+
+      @media (max-width: 520px) {
+        body {
+          padding: 18px;
+        }
+
+        main {
+          padding: 32px 24px;
+        }
+
+        .brand {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .authed-buttons {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body data-destination="/">
+    <main role="main">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">TI</div>
+        <div>
+          <p class="subtitle" style="margin-bottom: 4px;">Trend ISG</p>
+          <h1>Welcome back</h1>
+          <p class="subtitle">Sign in with the email and password linked to your account.</p>
+        </div>
+      </div>
+
+      <form id="loginForm" autocomplete="on" novalidate>
+        <div>
+          <label for="email">Email address</label>
+          <input id="email" name="email" type="email" autocomplete="email" placeholder="you@trendisg.com" required>
+        </div>
+        <div>
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required minlength="6">
+        </div>
+        <button class="primary" id="submitBtn" type="submit">Sign in</button>
+      </form>
+
+      <p id="feedback" class="feedback hidden" role="status" aria-live="polite"></p>
+
+      <div id="authedActions" class="authed hidden" aria-live="polite">
+        <p id="authedEmail"></p>
+        <div class="authed-buttons">
+          <button class="primary" id="enterSiteButton" type="button" disabled>Enter site</button>
+          <button class="ghost" id="signOutButton" type="button" disabled>Sign out</button>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        if (!window.firebase || !firebase.apps.length) {
+          console.error('Firebase failed to initialize. Check init.js.');
+          return;
+        }
+
+        const auth = firebase.auth();
+        const loginForm = document.getElementById('loginForm');
+        const emailField = document.getElementById('email');
+        const passwordField = document.getElementById('password');
+        const submitBtn = document.getElementById('submitBtn');
+        const feedbackEl = document.getElementById('feedback');
+        const authedActions = document.getElementById('authedActions');
+        const authedEmail = document.getElementById('authedEmail');
+        const enterButton = document.getElementById('enterSiteButton');
+        const signOutButton = document.getElementById('signOutButton');
+        const submitLabel = submitBtn.textContent;
+        const redirectParam = new URLSearchParams(window.location.search).get('redirect');
+
+        let destination = document.body.dataset.destination || '/';
+        if (redirectParam) {
+          try {
+            const target = new URL(redirectParam, window.location.origin);
+            if (target.origin === window.location.origin) {
+              destination = target.pathname + target.search + target.hash;
+            }
+          } catch (error) {
+            console.warn('Ignoring invalid redirect parameter', error);
+          }
+        }
+
+        const variants = ['error', 'success', 'info'];
+
+        const setFeedback = (message, variant) => {
+          variants.forEach(type => feedbackEl.classList.remove('is-' + type));
+          if (!message) {
+            feedbackEl.textContent = '';
+            feedbackEl.classList.add('hidden');
+            return;
+          }
+
+          feedbackEl.textContent = message;
+          feedbackEl.classList.remove('hidden');
+          if (variant && variants.includes(variant)) {
+            feedbackEl.classList.add('is-' + variant);
+          }
+        };
+
+        const setLoading = (state) => {
+          submitBtn.disabled = state;
+          emailField.disabled = state;
+          passwordField.disabled = state;
+          submitBtn.textContent = state ? 'Signing in…' : submitLabel;
+        };
+
+        const readableError = (error) => {
+          if (!error || !error.code) {
+            return error && error.message ? error.message : 'Unable to sign in. Please try again.';
+          }
+
+          switch (error.code) {
+            case 'auth/invalid-email':
+              return 'Enter a valid email address.';
+            case 'auth/user-disabled':
+              return 'This account has been disabled. Contact an administrator.';
+            case 'auth/user-not-found':
+              return 'No account found for that email.';
+            case 'auth/wrong-password':
+              return 'The password you entered is incorrect.';
+            case 'auth/too-many-requests':
+              return 'Too many attempts. Please wait a moment and try again.';
+            default:
+              return error.message.replace('Firebase: ', '');
+          }
+        };
+
+        loginForm.addEventListener('submit', function (event) {
+          event.preventDefault();
+
+          const email = emailField.value.trim();
+          const password = passwordField.value;
+
+          if (!email || !password) {
+            setFeedback('Enter both an email and password to continue.', 'error');
+            return;
+          }
+
+          setLoading(true);
+          setFeedback('Signing you in…', 'info');
+
+          auth.signInWithEmailAndPassword(email, password)
+            .catch(function (error) {
+              setFeedback(readableError(error), 'error');
+            })
+            .finally(function () {
+              setLoading(false);
+            });
+        });
+
+        auth.onAuthStateChanged(function (user) {
+          const isSignedIn = Boolean(user);
+          authedActions.classList.toggle('hidden', !isSignedIn);
+          enterButton.disabled = !isSignedIn;
+          signOutButton.disabled = !isSignedIn;
+
+          if (isSignedIn) {
+            authedEmail.textContent = user.email ? 'Signed in as ' + user.email : 'Signed in.';
+            setFeedback('Authentication complete. Continue when ready.', 'success');
+          } else {
+            loginForm.reset();
+            setFeedback('');
+          }
+        });
+
+        enterButton.addEventListener('click', function () {
+          enterButton.disabled = true;
+          window.location.assign(destination);
+        });
+
+        signOutButton.addEventListener('click', function () {
+          signOutButton.disabled = true;
+          setFeedback('Signing out…', 'info');
+
+          auth.signOut().catch(function (error) {
+            setFeedback(readableError(error), 'error');
+            signOutButton.disabled = false;
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
