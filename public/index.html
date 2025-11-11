@@ -19,7 +19,7 @@
             createUserWithEmailAndPassword, 
             signOut, 
             onAuthStateChanged,
-            setLogLevel
+            signInWithCustomToken
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, 
@@ -27,7 +27,8 @@
             setDoc, 
             updateDoc, 
             collection, 
-            onSnapshot 
+            onSnapshot,
+            setLogLevel
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- App Configuration ---
