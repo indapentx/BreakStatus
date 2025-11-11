@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Firebase SDKs -->
-    <script type_to_remove="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
             getAuth, 
@@ -31,10 +31,15 @@
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- App Configuration ---
-        
-        // IMPORTANT: Use environment variables provided by the platform
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-bus-tracker';
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHZz5fVOTvnokTuTUjNSC5QSiC7mFxyZM",
+            authDomain: "trend-isg.firebaseapp.com",
+            projectId: "trend-isg",
+            storageBucket: "trend-isg.firebasestorage.app",
+            messagingSenderId: "751472868865",
+            appId: "1:751472868865:web:eb6702b74236d19913ca00"
+        };
+        const appId = "trend-isg";
         
         let app, auth, db;
         let currentUserId = null;
