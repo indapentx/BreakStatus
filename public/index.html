@@ -205,12 +205,6 @@
         color: #555;
       }
 
-      .account-summary {
-        margin-bottom: 16px;
-        font-size: 0.95rem;
-        color: #333;
-      }
-
       .board-grid {
         display: grid;
         gap: 16px;
@@ -336,10 +330,7 @@
             <h1>Bus board</h1>
             <small>Resets daily. Today: <span id="dayLabel">—</span></small>
           </div>
-          <small id="rosterMeta" class="dim-text">Sign in to load roster</small>
         </header>
-
-        <p id="accountSummary" class="account-summary"></p>
 
         <div class="board-grid">
           <div class="list-card">
@@ -384,8 +375,6 @@
         const modeButtons = Array.from(document.querySelectorAll('[data-mode-button]'));
 
         const dayLabel = document.getElementById('dayLabel');
-        const rosterMeta = document.getElementById('rosterMeta');
-        const accountSummary = document.getElementById('accountSummary');
         const onList = document.getElementById('onList');
         const offList = document.getElementById('offList');
         const onCount = document.getElementById('onCount');
@@ -426,6 +415,7 @@
           members: {},
           membersLoaded: false,
           rosterLoaded: false,
+          busActionPending: false,
           rosterUnsub: null,
           dayUnsub: null,
           dayKey: null
@@ -478,12 +468,18 @@
           }
         };
 
-        const refreshPresenceButtons = (locked) => {
+        const refreshPresenceButtons = () => {
           const isAuthed = Boolean(state.user);
           const membershipKnown = isAuthed && state.membersLoaded;
           const isOnBus = membershipKnown && Boolean(state.members && state.members[state.user.uid]);
-          markOnBtn.disabled = locked || !membershipKnown || isOnBus;
-          leaveBusBtn.disabled = locked || !membershipKnown || !isOnBus;
+          const pending = state.busActionPending;
+          markOnBtn.disabled = !membershipKnown || isOnBus || pending;
+          leaveBusBtn.disabled = !membershipKnown || !isOnBus || pending;
+        };
+
+        const setBusActionPending = (pending) => {
+          state.busActionPending = pending;
+          refreshPresenceButtons();
         };
 
         const setMode = (mode) => {
@@ -622,14 +618,14 @@
 
           state.dayKey = newKey;
           state.membersLoaded = false;
-          refreshPresenceButtons(true);
+          state.busActionPending = false;
+          refreshPresenceButtons();
           dayLabel.textContent = formatDayLabel();
 
           if (state.dayUnsub) {
             state.dayUnsub();
             state.dayUnsub = null;
           }
-          state.membersLoaded = false;
 
           if (!state.user) {
             return;
@@ -667,12 +663,10 @@
               state.rosterMap.set(entry.userId, entry);
             });
             state.rosterLoaded = true;
-            rosterMeta.textContent = state.roster.length ? state.roster.length + ' people on the roster' : 'No roster entries yet';
             renderBoard();
             clearLoadingMessageIfReady();
           }, error => {
             console.error(error);
-            rosterMeta.textContent = 'Unable to load roster';
           });
         };
 
@@ -682,6 +676,7 @@
             state.rosterUnsub = null;
           }
           state.rosterLoaded = false;
+          clearLoadingMessageIfReady();
         };
 
         const clearDayListener = () => {
@@ -689,6 +684,10 @@
             state.dayUnsub();
             state.dayUnsub = null;
           }
+          state.membersLoaded = false;
+          state.members = {};
+          state.busActionPending = false;
+          refreshPresenceButtons();
         };
 
         const renderBoard = () => {
@@ -750,8 +749,7 @@
           onCount.textContent = onEntries.length;
           offCount.textContent = offEntries.length;
 
-          updateAccountSummary();
-          refreshPresenceButtons(false);
+          refreshPresenceButtons();
           clearLoadingMessageIfReady();
         };
 
@@ -788,16 +786,6 @@
           });
         };
 
-        const updateAccountSummary = () => {
-          if (!state.user) {
-            accountSummary.textContent = '';
-            return;
-          }
-          const memberEntry = state.members ? state.members[state.user.uid] : undefined;
-          const status = memberEntry ? 'on the bus' : 'waiting';
-          accountSummary.textContent = (state.user.email || 'Signed in') + ' · currently ' + status + '.';
-        };
-
         const updatePresence = (isOnBus) => {
           if (!state.user) {
             return;
@@ -828,7 +816,7 @@
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
               };
 
-          refreshPresenceButtons(true);
+          setBusActionPending(true);
           setBoardFeedback(isOnBus ? 'Updating status…' : 'Clearing status…', 'info');
 
           dayRef.set(payload, { merge: true })
@@ -852,7 +840,7 @@
               setBoardFeedback(readableError(error), 'error');
             })
             .finally(() => {
-              refreshPresenceButtons(false);
+              setBusActionPending(false);
             });
         };
 
@@ -871,7 +859,10 @@
 
         setShellState(false);
         setMode('signin');
-        refreshPresenceButtons(true);
+        state.membersLoaded = false;
+        state.rosterLoaded = false;
+        state.busActionPending = false;
+        refreshPresenceButtons();
 
         auth.onAuthStateChanged(async function (user) {
           state.user = user || null;
@@ -886,7 +877,7 @@
             await ensureRosterEntry(user);
             attachRosterListener();
             updateDayListener();
-            refreshPresenceButtons(false);
+            refreshPresenceButtons();
             signOutBtn.disabled = false;
           } else {
             authForm.reset();
@@ -898,20 +889,16 @@
             state.members = {};
             state.dayKey = null;
             state.membersLoaded = false;
-            rosterMeta.textContent = 'Sign in to load roster';
             setBoardFeedback('');
-            accountSummary.textContent = '';
             state.roster = [];
             state.rosterMap.clear();
             onList.innerHTML = '';
             offList.innerHTML = '';
             onCount.textContent = '0';
             offCount.textContent = '0';
-            refreshPresenceButtons(true);
+            refreshPresenceButtons();
             signOutBtn.disabled = true;
           }
-
-          updateAccountSummary();
         });
       });
     </script>
