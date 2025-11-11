@@ -425,6 +425,7 @@
           rosterMap: new Map(),
           members: {},
           membersLoaded: false,
+          rosterLoaded: false,
           rosterUnsub: null,
           dayUnsub: null,
           dayKey: null
@@ -465,6 +466,16 @@
         const setShellState = (isAuthed) => {
           shell.classList.toggle('is-authed', isAuthed);
           shell.classList.toggle('is-guest', !isAuthed);
+        };
+
+        const clearLoadingMessageIfReady = () => {
+          if (
+            state.membersLoaded &&
+            state.rosterLoaded &&
+            boardFeedback.textContent.trim() === 'Loading roster…'
+          ) {
+            setBoardFeedback('');
+          }
         };
 
         const refreshPresenceButtons = (locked) => {
@@ -644,6 +655,7 @@
             return;
           }
 
+          state.rosterLoaded = false;
           state.rosterUnsub = db.collection('passengers').orderBy('label').onSnapshot(snapshot => {
             state.roster = [];
             state.rosterMap.clear();
@@ -654,8 +666,10 @@
               state.roster.push(entry);
               state.rosterMap.set(entry.userId, entry);
             });
+            state.rosterLoaded = true;
             rosterMeta.textContent = state.roster.length ? state.roster.length + ' people on the roster' : 'No roster entries yet';
             renderBoard();
+            clearLoadingMessageIfReady();
           }, error => {
             console.error(error);
             rosterMeta.textContent = 'Unable to load roster';
@@ -667,6 +681,7 @@
             state.rosterUnsub();
             state.rosterUnsub = null;
           }
+          state.rosterLoaded = false;
         };
 
         const clearDayListener = () => {
@@ -737,6 +752,7 @@
 
           updateAccountSummary();
           refreshPresenceButtons(false);
+          clearLoadingMessageIfReady();
         };
 
         const ensureRosterEntry = async (user) => {
