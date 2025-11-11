@@ -468,13 +468,38 @@
           }
         };
 
+        const getCurrentUserRosterKey = () => {
+          if (!state.user) {
+            return null;
+          }
+
+          const uid = state.user.uid;
+          if (state.rosterMap.has(uid)) {
+            return uid;
+          }
+
+          if (state.roster.length && state.user.email) {
+            const match = state.roster.find(person => {
+              if (!person.email) {
+                return false;
+              }
+              return person.email.toLowerCase() === state.user.email.toLowerCase();
+            });
+            if (match) {
+              return match.userId || match.id || uid;
+            }
+          }
+
+          return uid;
+        };
+
         const refreshPresenceButtons = () => {
-          const isAuthed = Boolean(state.user);
-          const membershipKnown = isAuthed && state.membersLoaded;
-          const isOnBus = membershipKnown && Boolean(state.members && state.members[state.user.uid]);
+          const datasetReady = state.membersLoaded && state.rosterLoaded;
+          const userKey = datasetReady ? getCurrentUserRosterKey() : null;
+          const memberEntry = userKey && state.members ? state.members[userKey] : undefined;
           const pending = state.busActionPending;
-          markOnBtn.disabled = !membershipKnown || isOnBus || pending;
-          leaveBusBtn.disabled = !membershipKnown || !isOnBus || pending;
+          markOnBtn.disabled = !datasetReady || pending || Boolean(memberEntry);
+          leaveBusBtn.disabled = !datasetReady || pending || !memberEntry;
         };
 
         const setBusActionPending = (pending) => {
@@ -661,6 +686,9 @@
               entry.userId = entry.userId || doc.id;
               state.roster.push(entry);
               state.rosterMap.set(entry.userId, entry);
+              if (entry.id && entry.id !== entry.userId) {
+                state.rosterMap.set(entry.id, entry);
+              }
             });
             state.rosterLoaded = true;
             renderBoard();
@@ -698,17 +726,21 @@
           onList.innerHTML = '';
           offList.innerHTML = '';
 
-          const entries = state.roster.length ? state.roster : [];
-          const onEntries = [];
-          const offEntries = [];
+          const members = state.members || {};
+          const memberKeys = Object.keys(members);
+          const onEntries = memberKeys.map(key => {
+            const member = members[key] || {};
+            const rosterPerson = state.rosterMap.get(key);
+            const label = rosterPerson?.label || member.label || rosterPerson?.email || member.email || state.user?.email || 'Unnamed';
+            const timestamp = member.updatedAt && member.updatedAt.toDate ? member.updatedAt.toDate() : null;
+            return { key, label, timestamp };
+          });
 
-          entries.forEach(person => {
-            const memberKey = person.userId || person.id;
-            const member = state.members ? state.members[memberKey] : undefined;
-            if (member) {
-              onEntries.push({ person, member });
-            } else {
-              offEntries.push({ person });
+          const offEntries = [];
+          state.roster.forEach(person => {
+            const key = person.userId || person.id;
+            if (!members[key]) {
+              offEntries.push(person);
             }
           });
 
@@ -718,15 +750,16 @@
             placeholder.textContent = 'No one on the bus yet.';
             onList.appendChild(placeholder);
           } else {
-            onEntries.forEach(({ person, member }) => {
+            onEntries.forEach(entry => {
               const item = document.createElement('li');
-              item.textContent = person.label || person.email || 'Unnamed';
-              if (member && member.updatedAt && member.updatedAt.toDate) {
+              item.textContent = entry.label;
+              if (entry.timestamp) {
                 const time = document.createElement('span');
                 time.className = 'dim-text';
                 time.textContent = new Intl.DateTimeFormat('en-US', {
-                  hour: '2-digit', minute: '2-digit'
-                }).format(member.updatedAt.toDate());
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }).format(entry.timestamp);
                 item.appendChild(time);
               }
               onList.appendChild(item);
@@ -736,10 +769,10 @@
           if (!offEntries.length) {
             const placeholder = document.createElement('li');
             placeholder.className = 'dim-text';
-            placeholder.textContent = entries.length ? 'Everyone is on board.' : 'Add people to the roster.';
+            placeholder.textContent = state.roster.length ? 'Everyone is on board.' : 'Add people to the roster.';
             offList.appendChild(placeholder);
           } else {
-            offEntries.forEach(({ person }) => {
+            offEntries.forEach(person => {
               const item = document.createElement('li');
               item.textContent = person.label || person.email || 'Unnamed';
               offList.appendChild(item);
@@ -798,15 +831,18 @@
           }
 
           const dayRef = db.collection('busDays').doc(state.dayKey);
-          const memberPath = 'members.' + state.user.uid;
-          const label = (state.rosterMap.get(state.user.uid) || {}).label || state.user.email || 'Unnamed';
+          const userKey = getCurrentUserRosterKey() || state.user.uid;
+          const rosterEntry = state.rosterMap.get(userKey);
+          const label = rosterEntry?.label || state.user.displayName || state.user.email || 'Unnamed';
+          const emailValue = rosterEntry?.email || state.user.email || (state.members[userKey] && state.members[userKey].email) || '';
+          const memberPath = 'members.' + userKey;
 
           const payload = isOnBus
             ? {
                 [memberPath]: {
                   label,
-                  email: state.user.email || '',
-                  userId: state.user.uid,
+                  email: emailValue,
+                  userId: userKey,
                   updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 },
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -824,14 +860,14 @@
               setBoardFeedback(isOnBus ? 'Marked as on the bus.' : 'Marked as waiting.', 'success');
               if (isOnBus) {
                 state.members = state.members || {};
-                state.members[state.user.uid] = {
+                state.members[userKey] = {
                   label,
-                  email: state.user.email || '',
-                  userId: state.user.uid,
+                  email: emailValue,
+                  userId: userKey,
                   updatedAt: firebase.firestore.Timestamp.now()
                 };
-              } else if (state.members && state.members[state.user.uid]) {
-                delete state.members[state.user.uid];
+              } else if (state.members && state.members[userKey]) {
+                delete state.members[userKey];
               }
               renderBoard();
             })
