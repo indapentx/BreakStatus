@@ -3,14 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>On The Bus</title>
+    <title>Bus Status</title>
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
         color-scheme: light;
-        font-family: "Inter", "SF Pro Display", "Segoe UI", system-ui, -apple-system,
-          BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-        background-color: #f3f3f3;
-        color: #111;
+        --bg: #ffffff;
+        --surface: #f4f4f4;
+        --card: #ffffff;
+        --text: #111111;
+        --subtle: #6b6b6b;
+        --border: #e3e3e3;
+        --accent: #111111;
       }
 
       * {
@@ -18,207 +34,300 @@
       }
 
       body {
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
         margin: 0;
+        padding: 2rem 1.5rem 3rem;
+        background: var(--bg);
+        color: var(--text);
         min-height: 100vh;
         display: flex;
         justify-content: center;
-        align-items: flex-start;
-        background: linear-gradient(180deg, #ffffff 0%, #f8f8f8 60%, #f1f1f1 100%);
-        padding: 2rem 1rem 3rem;
       }
 
       main {
-        width: min(900px, 100%);
+        width: min(960px, 100%);
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
       }
 
-      .panel {
-        background: #fff;
-        border: 1px solid #e5e5e5;
-        border-radius: 16px;
-        padding: 1.75rem;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05);
+      header {
+        text-align: left;
       }
 
-      .hero h1 {
-        margin: 0 0 0.4rem;
-        font-size: clamp(2rem, 3vw, 2.6rem);
+      h1 {
+        margin: 0 0 0.35rem;
+        font-size: clamp(2rem, 4vw, 2.5rem);
         letter-spacing: -0.02em;
       }
 
-      .hero p {
+      header p {
         margin: 0;
-        color: #555;
-        font-size: 1rem;
+        color: var(--subtle);
+        max-width: 52ch;
       }
 
-      form {
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.75rem;
+        box-shadow: 0 20px 40px rgba(17, 17, 17, 0.03);
+      }
+
+      .auth-card form {
         display: flex;
         flex-direction: column;
-        gap: 0.8rem;
+        gap: 1rem;
       }
 
       label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
         font-size: 0.9rem;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #555;
+        letter-spacing: 0.08em;
+        color: var(--subtle);
       }
 
       input {
-        border: 1px solid #ccc;
+        border: 1px solid var(--border);
         border-radius: 999px;
-        padding: 0.9rem 1.2rem;
+        padding: 0.85rem 1.1rem;
         font-size: 1rem;
-        background: #fff;
-        transition: border-color 0.2s ease;
+        background: var(--surface);
+        color: var(--text);
       }
 
-      input:focus {
-        outline: none;
-        border-color: #111;
+      input:focus-visible {
+        outline: 2px solid var(--text);
+        outline-offset: 2px;
       }
 
-      .button-row {
+      .form-actions {
         display: flex;
-        gap: 0.6rem;
         flex-wrap: wrap;
+        gap: 0.75rem;
       }
 
       button {
-        appearance: none;
-        border: 1px solid #111;
+        border: none;
         border-radius: 999px;
-        background: #111;
-        color: #fff;
         padding: 0.85rem 1.4rem;
         font-size: 0.95rem;
         font-weight: 600;
         cursor: pointer;
-        transition: opacity 0.2s ease, color 0.2s ease, background 0.2s ease;
+        background: var(--accent);
+        color: var(--bg);
+        transition: opacity 0.2s ease, transform 0.2s ease;
       }
 
-      button.secondary {
+      button.ghost {
         background: transparent;
-        color: #111;
+        color: var(--text);
+        border: 1px solid var(--border);
       }
 
       button:disabled {
-        opacity: 0.5;
+        opacity: 0.35;
         cursor: not-allowed;
       }
 
-      .lists {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
+      button:not(:disabled):hover {
+        opacity: 0.9;
       }
 
-      .list-card {
-        flex: 1 1 280px;
-        border-radius: 16px;
-        border: 1px solid #e5e5e5;
-        padding: 1.4rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.9rem;
+      .muted {
+        color: var(--subtle);
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+        min-height: 1.25rem;
       }
 
-      .list-card h3 {
-        margin: 0;
-        font-size: 1.1rem;
-        letter-spacing: 0.02em;
+      .muted.error {
+        color: #b3261e;
       }
 
-      ul {
-        list-style: none;
-        margin: 0;
-        padding: 0;
+      .dashboard {
         display: flex;
         flex-direction: column;
-        gap: 0.8rem;
+        gap: 1.5rem;
       }
 
-      li {
-        background: #fafafa;
-        border-radius: 12px;
-        padding: 0.9rem 1rem;
-        border: 1px solid #ececec;
+      .user-row {
         display: flex;
         justify-content: space-between;
+        align-items: center;
         gap: 1rem;
+      }
+
+      .eyebrow {
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.15em;
+        color: var(--subtle);
+        margin: 0;
+      }
+
+      .user-email {
+        margin: 0.25rem 0 0;
+        font-size: 1.35rem;
+        font-weight: 600;
+      }
+
+      .lists {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem;
+      }
+
+      .list-column {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.2rem;
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 1.1rem;
+        letter-spacing: -0.01em;
+      }
+
+      .status-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .status-list li {
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        padding: 0.9rem 1rem;
+        font-weight: 500;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        align-items: center;
+      }
+
+      .status-list .empty {
+        color: var(--subtle);
+        font-weight: 400;
         font-size: 0.95rem;
       }
 
-      .time {
-        color: #555;
-        font-size: 0.85rem;
-      }
-
-      .empty {
-        font-size: 0.9rem;
-        color: #999;
+      .time-badge {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--subtle);
       }
 
       .hidden {
-        display: none !important;
+        display: none;
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 1.25rem;
+        }
+
+        .form-actions {
+          flex-direction: column;
+        }
+
+        .user-row {
+          flex-direction: column;
+          align-items: flex-start;
+        }
       }
     </style>
   </head>
   <body>
     <main>
-      <section class="panel hero">
-        <h1>On the Bus</h1>
-        <p>Sign in with email to take a seat or hop off whenever you’re ready.</p>
-      </section>
+      <header>
+        <h1>Bus Status</h1>
+        <p>
+          Minimal, light-first attendance tracker. Sign in with email, then toggle
+          whether you are on the bus. Every join snapshot keeps the time stamp
+          so everyone stays in sync.
+        </p>
+      </header>
 
-      <section class="panel">
-        <h2 style="margin-top: 0">Email Sign In</h2>
-        <form id="auth-form">
-          <div>
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" placeholder="you@email.com" required />
+      <section class="card auth-card" id="auth-card">
+        <form id="auth-form" autocomplete="on">
+          <label>
+            Email
+            <input type="email" id="email" name="email" placeholder="you@email.com" required />
+          </label>
+          <label>
+            Password
+            <input
+              type="password"
+              id="password"
+              name="password"
+              minlength="6"
+              placeholder="Minimum 6 characters"
+              required
+            />
+          </label>
+          <div class="form-actions">
+            <button type="submit" name="action" value="signin">Sign In</button>
+            <button type="submit" name="action" value="register" class="ghost">
+              Create Account
+            </button>
           </div>
-          <div>
-            <label for="password">Password</label>
-            <input id="password" name="password" type="password" placeholder="••••••••" minlength="6" required />
-          </div>
-          <div class="button-row">
-            <button id="sign-in-btn" type="submit">Sign In</button>
-            <button id="register-btn" type="button" class="secondary">Register</button>
-            <button id="sign-out-btn" type="button" class="secondary" disabled>Sign Out</button>
-          </div>
-          <p id="auth-message" class="empty"></p>
         </form>
+        <p class="muted" id="auth-message">
+          Email + password auth is powered by Firebase. Add your project config before deploying.
+        </p>
       </section>
 
-      <section class="panel">
-        <div class="button-row" style="justify-content: space-between; align-items: center">
+      <section class="card dashboard hidden" id="dashboard">
+        <div class="user-row">
           <div>
-            <strong id="current-email">Not signed in</strong>
+            <p class="eyebrow">Signed in as</p>
+            <p class="user-email" id="user-email">—</p>
           </div>
-          <div class="button-row">
-            <button id="join-btn" type="button" disabled>Join the Bus</button>
-            <button id="leave-btn" type="button" class="secondary" disabled>Leave the Bus</button>
-          </div>
+          <button class="ghost" id="sign-out">Sign Out</button>
         </div>
 
         <div class="lists">
-          <div class="list-card">
-            <h3>On the Bus</h3>
-            <ul id="on-bus-list">
-              <li class="empty">No riders yet.</li>
+          <div class="list-column">
+            <div class="list-header">
+              <h2>On the bus</h2>
+              <button id="leave-btn" class="ghost" type="button" disabled>Leave list</button>
+            </div>
+            <ul class="status-list" id="on-bus">
+              <li class="empty">Sign in to see the roster.</li>
             </ul>
           </div>
-          <div class="list-card">
-            <h3>Not on the Bus</h3>
-            <ul id="off-bus-list">
-              <li class="empty">Sign in to show up here.</li>
+          <div class="list-column">
+            <div class="list-header">
+              <h2>Not on the bus</h2>
+              <button id="join-btn" type="button" disabled>Join bus</button>
+            </div>
+            <ul class="status-list" id="off-bus">
+              <li class="empty">Sign in to see the roster.</li>
             </ul>
           </div>
         </div>
+        <p class="muted" id="roster-message"></p>
       </section>
     </main>
 
@@ -231,160 +340,326 @@
         createUserWithEmailAndPassword,
         signOut,
       } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        setDoc,
+        getDoc,
+        collection,
+        onSnapshot,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-      /**
-       * TODO: Replace with your Firebase project configuration.
-       * You can find these values in the Firebase console.
-       */
-const firebaseConfig = {
-  apiKey: "AIzaSyDHZz5fVOTvnokTuTUjNSC5QSiC7mFxyZM",
-  authDomain: "trend-isg.firebaseapp.com",
-  projectId: "trend-isg",
-  storageBucket: "trend-isg.firebasestorage.app",
-  messagingSenderId: "751472868865",
-  appId: "1:751472868865:web:eb6702b74236d19913ca00"
-};
+      const firebaseConfig = {
+        apiKey: "AIzaSyDHZz5fVOTvnokTuTUjNSC5QSiC7mFxyZM",
+        authDomain: "trend-isg.firebaseapp.com",
+        projectId: "trend-isg",
+        storageBucket: "trend-isg.firebasestorage.app",
+        messagingSenderId: "751472868865",
+        appId: "1:751472868865:web:eb6702b74236d19913ca00",
+      };
 
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
+      const db = getFirestore(app);
+      const rosterCollection = collection(db, "busRoster");
 
+      const authCard = document.getElementById("auth-card");
+      const dashboard = document.getElementById("dashboard");
       const authForm = document.getElementById("auth-form");
       const emailInput = document.getElementById("email");
       const passwordInput = document.getElementById("password");
-      const registerBtn = document.getElementById("register-btn");
-      const signOutBtn = document.getElementById("sign-out-btn");
       const authMessage = document.getElementById("auth-message");
+      const rosterMessage = document.getElementById("roster-message");
+      const joinButton = document.getElementById("join-btn");
+      const leaveButton = document.getElementById("leave-btn");
+      const onBusList = document.getElementById("on-bus");
+      const offBusList = document.getElementById("off-bus");
+      const userEmailEl = document.getElementById("user-email");
+      const signOutButton = document.getElementById("sign-out");
 
-      const joinBtn = document.getElementById("join-btn");
-      const leaveBtn = document.getElementById("leave-btn");
-      const currentEmail = document.getElementById("current-email");
-      const onBusList = document.getElementById("on-bus-list");
-      const offBusList = document.getElementById("off-bus-list");
+      let currentUser = null;
+      let rosterEntries = [];
+      let rosterUnsubscribe = null;
+      let selfEntry = null;
+      let isRosterMutating = false;
 
-      const status = {
-        joined: false,
-        joinedAt: null,
-      };
+      function toggleViews(isSignedIn) {
+        if (isSignedIn) {
+          authCard.classList.add("hidden");
+          dashboard.classList.remove("hidden");
+        } else {
+          authCard.classList.remove("hidden");
+          dashboard.classList.add("hidden");
+        }
+      }
 
-      const setMessage = (text, isError = false) => {
-        authMessage.textContent = text;
-        authMessage.style.color = isError ? "#c00" : "#555";
-      };
+      function setAuthMessage(message, isError = false) {
+        authMessage.textContent = message;
+        authMessage.classList.toggle("error", isError);
+      }
 
-      const resetStatus = () => {
-        status.joined = false;
-        status.joinedAt = null;
-      };
+      function setRosterMessage(message = "", isError = false) {
+        if (!rosterMessage) return;
+        rosterMessage.textContent = message;
+        rosterMessage.classList.toggle("error", isError);
+      }
 
-      const formatTime = (date) =>
-        date?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) ?? "";
+      function toDate(value) {
+        if (!value) return null;
+        if (typeof value.toDate === "function") {
+          try {
+            return value.toDate();
+          } catch {
+            return null;
+          }
+        }
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? null : date;
+      }
 
-      const renderLists = (user) => {
-        onBusList.innerHTML = "";
-        offBusList.innerHTML = "";
+      function getTimestampValue(value) {
+        const date = toDate(value);
+        return date ? date.getTime() : Number.MAX_SAFE_INTEGER;
+      }
 
-        if (!user) {
-          onBusList.innerHTML = '<li class="empty">Sign in to join the ride.</li>';
-          offBusList.innerHTML = '<li class="empty">Sign in to show up here.</li>';
+      function formatTime(value) {
+        const date = toDate(value);
+        if (!date) return "--:--";
+        try {
+          return new Intl.DateTimeFormat([], {
+            hour: "numeric",
+            minute: "2-digit",
+          }).format(date);
+        } catch {
+          return "--:--";
+        }
+      }
+
+      function updateActionButtons() {
+        if (!currentUser) {
+          joinButton.disabled = true;
+          leaveButton.disabled = true;
+          return;
+        }
+        const entry =
+          rosterEntries.find((record) => record.id === currentUser.uid) ?? selfEntry;
+        const isOnBus = Boolean(entry?.isOnBus);
+        joinButton.disabled = isRosterMutating || isOnBus;
+        leaveButton.disabled = isRosterMutating || !isOnBus;
+      }
+
+      function createListItem(entry, { showJoinedAt = false } = {}) {
+        const li = document.createElement("li");
+        const emailSpan = document.createElement("span");
+        emailSpan.textContent = entry.email ?? "Unknown rider";
+        li.appendChild(emailSpan);
+
+        if (showJoinedAt && entry.joinedAt) {
+          const timeSpan = document.createElement("span");
+          timeSpan.className = "time-badge";
+          timeSpan.textContent = formatTime(entry.joinedAt);
+          li.appendChild(timeSpan);
+        }
+
+        return li;
+      }
+
+      function populateList(target, entries, emptyText, options = {}) {
+        if (!entries.length) {
+          target.innerHTML = `<li class="empty">${emptyText}</li>`;
+          return;
+        }
+        const fragment = document.createDocumentFragment();
+        entries.forEach((entry) => {
+          fragment.appendChild(createListItem(entry, options));
+        });
+        target.replaceChildren(fragment);
+      }
+
+      function renderLists() {
+        if (!currentUser) {
+          onBusList.innerHTML = '<li class="empty">Sign in to see the roster.</li>';
+          offBusList.innerHTML = '<li class="empty">Sign in to see the roster.</li>';
+          updateActionButtons();
           return;
         }
 
-        if (status.joined) {
-          const li = document.createElement("li");
-          li.innerHTML = `
-            <span>${user.email}</span>
-            <span class="time">${formatTime(status.joinedAt)}</span>
-          `;
-          onBusList.appendChild(li);
-        } else {
-          onBusList.innerHTML = '<li class="empty">No riders yet.</li>';
-        }
+        const onBusEntries = rosterEntries.filter((entry) => entry.isOnBus);
+        const offBusEntries = rosterEntries.filter((entry) => !entry.isOnBus);
 
-        if (!status.joined) {
-          const li = document.createElement("li");
-          li.textContent = user.email;
-          offBusList.appendChild(li);
-        } else {
-          offBusList.innerHTML = '<li class="empty">Everyone here hopped on.</li>';
+        const onBusSorted = [...onBusEntries].sort(
+          (a, b) => getTimestampValue(a.joinedAt) - getTimestampValue(b.joinedAt)
+        );
+        const offBusSorted = [...offBusEntries].sort((a, b) =>
+          (a.email ?? "").localeCompare(b.email ?? "", undefined, { sensitivity: "base" })
+        );
+
+        populateList(onBusList, onBusSorted, "Nobody is on the bus right now.", {
+          showJoinedAt: true,
+        });
+        populateList(offBusList, offBusSorted, "Everyone is already on board.");
+        updateActionButtons();
+      }
+
+      async function ensureRosterEntry(user) {
+        const ref = doc(db, "busRoster", user.uid);
+        try {
+          const snapshot = await getDoc(ref);
+          if (!snapshot.exists()) {
+            const seed = {
+              email: user.email,
+              isOnBus: false,
+              joinedAt: null,
+              updatedAt: serverTimestamp(),
+            };
+            await setDoc(ref, seed);
+            selfEntry = { id: user.uid, ...seed };
+          } else {
+            selfEntry = { id: user.uid, ...snapshot.data() };
+          }
+          updateActionButtons();
+        } catch (error) {
+          console.error("Unable to prepare roster entry", error);
+          setRosterMessage("Unable to prepare your roster slot.", true);
         }
-      };
+      }
+
+      function startRosterSubscription() {
+        if (rosterUnsubscribe) return;
+        rosterUnsubscribe = onSnapshot(
+          rosterCollection,
+          (snapshot) => {
+            rosterEntries = snapshot.docs.map((docSnap) => ({
+              id: docSnap.id,
+              ...docSnap.data(),
+            }));
+            if (currentUser) {
+              const latestSelf = rosterEntries.find((entry) => entry.id === currentUser.uid);
+              if (latestSelf) {
+                selfEntry = latestSelf;
+              }
+            }
+            renderLists();
+          },
+          (error) => {
+            console.error("Roster listener error", error);
+            setRosterMessage("Live roster updates paused. Refresh the page.", true);
+          }
+        );
+      }
+
+      function stopRosterSubscription() {
+        if (rosterUnsubscribe) {
+          rosterUnsubscribe();
+          rosterUnsubscribe = null;
+        }
+        rosterEntries = [];
+        selfEntry = null;
+        renderLists();
+      }
+
+      async function updateBusStatus(targetState) {
+        if (!currentUser || isRosterMutating) return;
+        isRosterMutating = true;
+        updateActionButtons();
+        setRosterMessage(targetState ? "Joining the bus…" : "Leaving the bus…");
+
+        const optimisticEntry = {
+          id: currentUser.uid,
+          email: currentUser.email,
+          isOnBus: targetState,
+          joinedAt: targetState ? new Date() : null,
+        };
+        const index = rosterEntries.findIndex((entry) => entry.id === currentUser.uid);
+        if (index >= 0) {
+          rosterEntries[index] = { ...rosterEntries[index], ...optimisticEntry };
+        } else {
+          rosterEntries = [...rosterEntries, optimisticEntry];
+        }
+        selfEntry = optimisticEntry;
+        renderLists();
+
+        try {
+          await setDoc(
+            doc(db, "busRoster", currentUser.uid),
+            {
+              email: currentUser.email,
+              isOnBus: targetState,
+              joinedAt: targetState ? serverTimestamp() : null,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+          setRosterMessage(targetState ? "You are on the bus." : "You left the bus.");
+        } catch (error) {
+          console.error("Roster update failed", error);
+          setRosterMessage("Update failed. Please try again.", true);
+        } finally {
+          isRosterMutating = false;
+          updateActionButtons();
+        }
+      }
 
       authForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const email = emailInput.value.trim();
-        const password = passwordInput.value;
+        const password = passwordInput.value.trim();
+        const action = event.submitter?.value ?? "signin";
+
+        if (!email || !password) {
+          setAuthMessage("Enter an email and a password.", true);
+          return;
+        }
 
         try {
-          await signInWithEmailAndPassword(auth, email, password);
-          setMessage("Signed in. Welcome aboard!");
+          if (action === "register") {
+            setAuthMessage("Creating your account…");
+            await createUserWithEmailAndPassword(auth, email, password);
+            setAuthMessage("Account created. Signing you in…");
+          } else {
+            setAuthMessage("Signing you in…");
+            await signInWithEmailAndPassword(auth, email, password);
+            setAuthMessage("Signed in.");
+          }
         } catch (error) {
-          setMessage(error.message, true);
+          const friendly =
+            typeof error?.code === "string"
+              ? error.code.replace("auth/", "").replace(/-/g, " ")
+              : "Something went wrong. Try again.";
+          setAuthMessage(friendly, true);
         }
       });
 
-      registerBtn.addEventListener("click", async () => {
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
+      joinButton.addEventListener("click", () => updateBusStatus(true));
+      leaveButton.addEventListener("click", () => updateBusStatus(false));
 
-        try {
-          await createUserWithEmailAndPassword(auth, email, password);
-          setMessage("Account created. You're signed in!", false);
-        } catch (error) {
-          setMessage(error.message, true);
-        }
-      });
-
-      signOutBtn.addEventListener("click", async () => {
+      signOutButton.addEventListener("click", async () => {
         try {
           await signOut(auth);
-          setMessage("Signed out.");
-        } catch (error) {
-          setMessage(error.message, true);
+          setAuthMessage("Signed out.");
+        } catch {
+          setAuthMessage("Unable to sign out. Try again.", true);
         }
       });
 
-      joinBtn.addEventListener("click", () => {
-        if (!auth.currentUser) return;
-        status.joined = true;
-        status.joinedAt = new Date();
-        joinBtn.disabled = true;
-        leaveBtn.disabled = false;
-        renderLists(auth.currentUser);
-      });
-
-      leaveBtn.addEventListener("click", () => {
-        if (!auth.currentUser) return;
-        status.joined = false;
-        status.joinedAt = null;
-        joinBtn.disabled = false;
-        leaveBtn.disabled = true;
-        renderLists(auth.currentUser);
-      });
-
-      onAuthStateChanged(auth, (user) => {
+      onAuthStateChanged(auth, async (user) => {
+        currentUser = user;
         if (user) {
-          currentEmail.textContent = user.email;
-          signOutBtn.disabled = false;
-          joinBtn.disabled = status.joined;
-          leaveBtn.disabled = !status.joined;
+          userEmailEl.textContent = user.email;
+          setRosterMessage("");
+          await ensureRosterEntry(user);
+          startRosterSubscription();
         } else {
-          currentEmail.textContent = "Not signed in";
-          signOutBtn.disabled = true;
-          joinBtn.disabled = true;
-          leaveBtn.disabled = true;
-          resetStatus();
+          userEmailEl.textContent = "—";
+          setRosterMessage("");
+          stopRosterSubscription();
         }
-
-        if (!user) {
-          authForm.reset();
-        } else {
-          resetStatus();
-          joinBtn.disabled = false;
-          leaveBtn.disabled = true;
-        }
-
-        renderLists(user);
+        toggleViews(Boolean(user));
+        renderLists();
       });
+
+      renderLists();
     </script>
   </body>
 </html>
