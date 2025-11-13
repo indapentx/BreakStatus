@@ -232,6 +232,22 @@
         font-size: 0.95rem;
       }
 
+      .person {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+
+      .person-name {
+        font-weight: 600;
+      }
+
+      .person-email {
+        font-size: 0.85rem;
+        color: var(--subtle);
+        font-weight: 400;
+      }
+
       .time-badge {
         font-size: 0.8rem;
         font-weight: 500;
@@ -263,9 +279,7 @@
       <header>
         <h1>Bus Status</h1>
         <p>
-          Minimal, light-first attendance tracker. Sign in with email, then toggle
-          whether you are on the bus. Every join snapshot keeps the time stamp
-          so everyone stays in sync.
+          Made by Furkan Öztürk for Trend ISG.
         </p>
       </header>
 
@@ -274,6 +288,17 @@
           <label>
             Email
             <input type="email" id="email" name="email" placeholder="you@email.com" required />
+          </label>
+          <label>
+            Full name
+            <input
+              type="text"
+              id="full-name"
+              name="fullName"
+              placeholder="Jessica Lee"
+              autocomplete="name"
+              required
+            />
           </label>
           <label>
             Password
@@ -328,6 +353,7 @@
           </div>
         </div>
         <p class="muted" id="roster-message"></p>
+        <p class="muted" id="group-message"></p>
       </section>
     </main>
 
@@ -359,18 +385,26 @@
         appId: "1:751472868865:web:eb6702b74236d19913ca00",
       };
 
+      const GROUPS = Object.freeze({
+        A: "Group A",
+        B: "Group B",
+        C: "Group C",
+        D: "Group D",
+      });
+
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
-      const rosterCollection = collection(db, "busRoster");
 
       const authCard = document.getElementById("auth-card");
       const dashboard = document.getElementById("dashboard");
       const authForm = document.getElementById("auth-form");
       const emailInput = document.getElementById("email");
+      const fullNameInput = document.getElementById("full-name");
       const passwordInput = document.getElementById("password");
       const authMessage = document.getElementById("auth-message");
       const rosterMessage = document.getElementById("roster-message");
+      const groupMessage = document.getElementById("group-message");
       const joinButton = document.getElementById("join-btn");
       const leaveButton = document.getElementById("leave-btn");
       const onBusList = document.getElementById("on-bus");
@@ -379,8 +413,12 @@
       const signOutButton = document.getElementById("sign-out");
 
       let currentUser = null;
+      let currentGroupId = null;
+      let currentProfile = { fullName: "" };
+      let pendingIdentity = null;
       let rosterEntries = [];
       let rosterUnsubscribe = null;
+      let groupUnsubscribe = null;
       let selfEntry = null;
       let isRosterMutating = false;
 
@@ -403,6 +441,83 @@
         if (!rosterMessage) return;
         rosterMessage.textContent = message;
         rosterMessage.classList.toggle("error", isError);
+      }
+
+      function setGroupMessage(message = "", isError = false) {
+        if (!groupMessage) return;
+        groupMessage.textContent = message;
+        groupMessage.classList.toggle("error", isError);
+      }
+
+      function isValidGroupId(groupId) {
+        return Boolean(groupId && GROUPS[groupId]);
+      }
+
+      function groupLabel(groupId) {
+        return GROUPS[groupId] ?? groupId ?? "Unknown";
+      }
+
+      function sanitizeFullName(value) {
+        return value ? value.replace(/\s+/g, " ").trim() : "";
+      }
+
+      function rememberFullName(email, fullName) {
+        if (!email || !fullName) return;
+        try {
+          localStorage.setItem(`fullName:${email}`, fullName);
+        } catch {
+          /* ignore storage issues */
+        }
+      }
+
+      function recallFullName(email) {
+        if (!email) return "";
+        try {
+          return localStorage.getItem(`fullName:${email}`) ?? "";
+        } catch {
+          return "";
+        }
+      }
+
+      function getCurrentFullName() {
+        return (
+          sanitizeFullName(currentProfile?.fullName) ||
+          sanitizeFullName(pendingIdentity?.fullName) ||
+          ""
+        );
+      }
+
+      async function saveProfileFullName(user, fullName) {
+        if (!user || !fullName) return;
+        const profileRef = doc(db, "userProfiles", user.uid);
+        try {
+          await setDoc(
+            profileRef,
+            {
+              fullName,
+              email: user.email,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+          currentProfile = { fullName };
+        } catch (error) {
+          console.error("Unable to save profile name", error);
+          throw error;
+        }
+      }
+
+      async function fetchProfile(user) {
+        if (!user) return null;
+        try {
+          const snapshot = await getDoc(doc(db, "userProfiles", user.uid));
+          if (snapshot.exists()) {
+            return snapshot.data();
+          }
+        } catch (error) {
+          console.error("Unable to load profile", error);
+        }
+        return null;
       }
 
       function toDate(value) {
@@ -437,7 +552,7 @@
       }
 
       function updateActionButtons() {
-        if (!currentUser) {
+        if (!currentUser || !currentGroupId) {
           joinButton.disabled = true;
           leaveButton.disabled = true;
           return;
@@ -451,9 +566,23 @@
 
       function createListItem(entry, { showJoinedAt = false } = {}) {
         const li = document.createElement("li");
-        const emailSpan = document.createElement("span");
-        emailSpan.textContent = entry.email ?? "Unknown rider";
-        li.appendChild(emailSpan);
+
+        const person = document.createElement("span");
+        person.className = "person";
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "person-name";
+        nameSpan.textContent = entry.fullName ?? entry.email ?? "Unknown rider";
+        person.appendChild(nameSpan);
+
+        if (entry.email) {
+          const emailSpan = document.createElement("span");
+          emailSpan.className = "person-email";
+          emailSpan.textContent = entry.email;
+          person.appendChild(emailSpan);
+        }
+
+        li.appendChild(person);
 
         if (showJoinedAt && entry.joinedAt) {
           const timeSpan = document.createElement("span");
@@ -485,6 +614,14 @@
           return;
         }
 
+        if (!currentGroupId) {
+          const awaiting = "Waiting for a group assignment.";
+          onBusList.innerHTML = `<li class="empty">${awaiting}</li>`;
+          offBusList.innerHTML = `<li class="empty">${awaiting}</li>`;
+          updateActionButtons();
+          return;
+        }
+
         const onBusEntries = rosterEntries.filter((entry) => entry.isOnBus);
         const offBusEntries = rosterEntries.filter((entry) => !entry.isOnBus);
 
@@ -502,13 +639,16 @@
         updateActionButtons();
       }
 
-      async function ensureRosterEntry(user) {
-        const ref = doc(db, "busRoster", user.uid);
+      async function ensureRosterEntry(user, groupId) {
+        if (!user || !groupId) return;
+        const ref = doc(db, "groups", groupId, "busRoster", user.uid);
+        const fullName = getCurrentFullName() || user.email;
         try {
           const snapshot = await getDoc(ref);
           if (!snapshot.exists()) {
             const seed = {
               email: user.email,
+              fullName,
               isOnBus: false,
               joinedAt: null,
               updatedAt: serverTimestamp(),
@@ -516,7 +656,20 @@
             await setDoc(ref, seed);
             selfEntry = { id: user.uid, ...seed };
           } else {
-            selfEntry = { id: user.uid, ...snapshot.data() };
+            const data = snapshot.data();
+            selfEntry = { id: user.uid, ...data };
+            if (fullName && data.fullName !== fullName) {
+              await setDoc(
+                ref,
+                {
+                  fullName,
+                  email: user.email,
+                  updatedAt: serverTimestamp(),
+                },
+                { merge: true }
+              );
+              selfEntry.fullName = fullName;
+            }
           }
           updateActionButtons();
         } catch (error) {
@@ -525,10 +678,12 @@
         }
       }
 
-      function startRosterSubscription() {
-        if (rosterUnsubscribe) return;
+      function startRosterSubscription(groupId) {
+        if (!groupId) return;
+        stopRosterSubscription();
+        const rosterRef = collection(db, "groups", groupId, "busRoster");
         rosterUnsubscribe = onSnapshot(
-          rosterCollection,
+          rosterRef,
           (snapshot) => {
             rosterEntries = snapshot.docs.map((docSnap) => ({
               id: docSnap.id,
@@ -559,15 +714,81 @@
         renderLists();
       }
 
+      function startGroupWatcher(user) {
+        stopGroupWatcher();
+        if (!user) return;
+        const groupRef = doc(db, "userGroups", user.uid);
+        groupUnsubscribe = onSnapshot(
+          groupRef,
+          (snapshot) => {
+            handleGroupSnapshot(snapshot).catch((error) => {
+              console.error("Group handling failed", error);
+              setGroupMessage("Unable to load your group.", true);
+            });
+          },
+          (error) => {
+            console.error("Group listener error", error);
+            currentGroupId = null;
+            setGroupMessage("Unable to load your group.", true);
+            stopRosterSubscription();
+            updateActionButtons();
+          }
+        );
+      }
+
+      function stopGroupWatcher() {
+        if (groupUnsubscribe) {
+          groupUnsubscribe();
+          groupUnsubscribe = null;
+        }
+      }
+
+      async function handleGroupSnapshot(snapshot) {
+        if (!currentUser) return;
+        if (!snapshot.exists()) {
+          currentGroupId = null;
+          setGroupMessage("No group assigned. Contact the owner.", true);
+          stopRosterSubscription();
+          updateActionButtons();
+          return;
+        }
+        const data = snapshot.data();
+        const groupId = data.groupId;
+        if (!isValidGroupId(groupId)) {
+          currentGroupId = null;
+          setGroupMessage("Invalid group assignment. Contact the owner.", true);
+          stopRosterSubscription();
+          updateActionButtons();
+          return;
+        }
+        if (groupId === currentGroupId) {
+          setGroupMessage(`Group: ${groupLabel(groupId)}`);
+          return;
+        }
+        currentGroupId = groupId;
+        setGroupMessage(`Group: ${groupLabel(groupId)}`);
+        setRosterMessage("");
+        stopRosterSubscription();
+        await ensureRosterEntry(currentUser, groupId);
+        startRosterSubscription(groupId);
+      }
+
       async function updateBusStatus(targetState) {
-        if (!currentUser || isRosterMutating) return;
+        if (!currentUser || !currentGroupId || isRosterMutating) {
+          if (!currentGroupId) {
+            setRosterMessage("You need a group before toggling the bus.", true);
+          }
+          return;
+        }
         isRosterMutating = true;
         updateActionButtons();
         setRosterMessage(targetState ? "Joining the bus…" : "Leaving the bus…");
 
+        const fullName = getCurrentFullName() || currentUser.email;
         const optimisticEntry = {
           id: currentUser.uid,
           email: currentUser.email,
+          fullName,
           isOnBus: targetState,
           joinedAt: targetState ? new Date() : null,
         };
@@ -582,9 +803,10 @@
 
         try {
           await setDoc(
-            doc(db, "busRoster", currentUser.uid),
+            doc(db, "groups", currentGroupId, "busRoster", currentUser.uid),
             {
               email: currentUser.email,
+              fullName,
               isOnBus: targetState,
               joinedAt: targetState ? serverTimestamp() : null,
               updatedAt: serverTimestamp(),
@@ -601,16 +823,41 @@
         }
       }
 
+      function attemptFullNamePrefill() {
+        const suggestion = recallFullName(emailInput.value.trim());
+        if (suggestion && !fullNameInput.value.trim()) {
+          fullNameInput.value = suggestion;
+        }
+      }
+
+      emailInput.addEventListener("blur", attemptFullNamePrefill);
+      emailInput.addEventListener("change", attemptFullNamePrefill);
+
       authForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         const email = emailInput.value.trim();
+        const fullName = sanitizeFullName(fullNameInput.value);
+        fullNameInput.value = fullName;
         const password = passwordInput.value.trim();
         const action = event.submitter?.value ?? "signin";
 
-        if (!email || !password) {
-          setAuthMessage("Enter an email and a password.", true);
+        if (!email) {
+          setAuthMessage("Enter an email address.", true);
           return;
         }
+
+        if (!fullName) {
+          setAuthMessage("Enter your full name.", true);
+          return;
+        }
+
+        if (!password) {
+          setAuthMessage("Enter a password.", true);
+          return;
+        }
+
+        pendingIdentity = { email, fullName };
+        rememberFullName(email, fullName);
 
         try {
           if (action === "register") {
@@ -628,6 +875,7 @@
               ? error.code.replace("auth/", "").replace(/-/g, " ")
               : "Something went wrong. Try again.";
           setAuthMessage(friendly, true);
+          pendingIdentity = null;
         }
       });
 
@@ -648,11 +896,42 @@
         if (user) {
           userEmailEl.textContent = user.email;
           setRosterMessage("");
-          await ensureRosterEntry(user);
-          startRosterSubscription();
+          setGroupMessage("Looking up your group…");
+          try {
+            if (pendingIdentity && pendingIdentity.email === user.email) {
+              await saveProfileFullName(user, pendingIdentity.fullName);
+              rememberFullName(user.email, pendingIdentity.fullName);
+            } else {
+              const profile = await fetchProfile(user);
+              currentProfile = profile?.fullName
+                ? { fullName: sanitizeFullName(profile.fullName) }
+                : { fullName: "" };
+              if (!currentProfile.fullName) {
+                const suggestion = recallFullName(user.email);
+                if (suggestion) {
+                  currentProfile.fullName = suggestion;
+                  rememberFullName(user.email, suggestion);
+                } else {
+                  setAuthMessage("Add your full name when signing in next time.", true);
+                }
+              } else {
+                rememberFullName(user.email, currentProfile.fullName);
+              }
+            }
+          } catch {
+            setAuthMessage("Unable to sync your full name. Try again.", true);
+          } finally {
+            pendingIdentity = null;
+          }
+          startGroupWatcher(user);
         } else {
           userEmailEl.textContent = "—";
           setRosterMessage("");
+          setGroupMessage("");
+          currentGroupId = null;
+          currentProfile = { fullName: "" };
+          pendingIdentity = null;
+          stopGroupWatcher();
           stopRosterSubscription();
         }
         toggleViews(Boolean(user));
