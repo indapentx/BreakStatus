@@ -344,14 +344,6 @@
         display: none;
       }
 
-      .admin-meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: 1rem;
-        flex-wrap: wrap;
-      }
-
       .admin-groups {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -371,10 +363,11 @@
       .admin-group-card h3 {
         margin: 0;
         letter-spacing: -0.01em;
+        text-transform: capitalize;
       }
 
       .admin-group-card .status-list {
-        background: var(--card);
+        background: transparent;
       }
 
       .admin-group-divider {
@@ -499,8 +492,7 @@
         <div class="user-row">
           <div>
             <p class="eyebrow">Admin view</p>
-            <h2>All groups overview</h2>
-            <p class="muted" id="admin-user-email">—</p>
+            <p class="user-email" id="admin-user-email">—</p>
           </div>
           <button class="ghost" id="admin-sign-out">Sign Out</button>
         </div>
