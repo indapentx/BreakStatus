@@ -334,6 +334,55 @@
         display: none;
       }
 
+      .admin-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .admin-panel.hidden {
+        display: none;
+      }
+
+      .admin-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .admin-groups {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+      }
+
+      .admin-group-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem;
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .admin-group-card h3 {
+        margin: 0;
+        letter-spacing: -0.01em;
+      }
+
+      .admin-group-card .status-list {
+        background: var(--card);
+      }
+
+      .admin-group-divider {
+        height: 1px;
+        width: 100%;
+        background: var(--border);
+      }
+
       @media (max-width: 640px) {
         body {
           padding: 1.25rem;
@@ -445,6 +494,20 @@
         <p class="muted" id="roster-message"></p>
         <p class="muted" id="group-message"></p>
       </section>
+
+      <section class="card admin-panel hidden" id="admin-panel">
+        <div class="user-row">
+          <div>
+            <p class="eyebrow">Admin view</p>
+            <h2>All groups overview</h2>
+            <p class="muted" id="admin-user-email">—</p>
+          </div>
+          <button class="ghost" id="admin-sign-out">Sign Out</button>
+        </div>
+        <div class="admin-groups" id="admin-groups">
+          <p class="muted">Loading group data…</p>
+        </div>
+      </section>
     </main>
 
     <script type="module">
@@ -461,9 +524,12 @@
         doc,
         setDoc,
         getDoc,
+        getDocs,
         collection,
         onSnapshot,
         serverTimestamp,
+        writeBatch,
+        runTransaction,
       } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
       const firebaseConfig = {
@@ -481,10 +547,14 @@
         C: "C",
         D: "D",
       });
-
+      const ADMIN_EMAILS = new Set([
+        "furkan.ozturk@gmail.com",
+      ]);
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
+      const RESET_TIMEZONE = "Europe/Istanbul";
+      const RESET_CONTROL_REF = doc(db, "systemSettings", "dailyRosterReset");
 
       const authCard = document.getElementById("auth-card");
       const siteHeader = document.getElementById("site-header");
@@ -506,6 +576,10 @@
       const offBusList = document.getElementById("off-bus");
       const userEmailEl = document.getElementById("user-email");
       const signOutButton = document.getElementById("sign-out");
+      const adminPanel = document.getElementById("admin-panel");
+      const adminGroupsContainer = document.getElementById("admin-groups");
+      const adminUserEmail = document.getElementById("admin-user-email");
+      const adminSignOutButton = document.getElementById("admin-sign-out");
 
       let authMode = "signin";
       let currentUser = null;
@@ -518,11 +592,14 @@
       let selfEntry = null;
       let isRosterMutating = false;
       let isPasswordVisible = false;
+      let isAdmin = false;
+      const adminRosterData = new Map();
+      const adminRosterUnsubscribes = new Map();
 
       function toggleViews(isSignedIn) {
         if (isSignedIn) {
           authCard.classList.add("hidden");
-          dashboard.classList.remove("hidden");
+          dashboard.classList.toggle("hidden", Boolean(isAdmin));
         } else {
           authCard.classList.remove("hidden");
           dashboard.classList.add("hidden");
@@ -544,6 +621,29 @@
         if (!groupMessage) return;
         groupMessage.textContent = message;
         groupMessage.classList.toggle("error", isError);
+      }
+
+      function isAdminAccount(user) {
+        const email = typeof user === "string" ? user : user?.email;
+        return Boolean(email && ADMIN_EMAILS.has(String(email).toLowerCase()));
+      }
+
+      function setAdminMode(enabled) {
+        isAdmin = Boolean(enabled);
+        if (adminPanel) {
+          adminPanel.classList.toggle("hidden", !isAdmin);
+        }
+        if (isAdmin && adminUserEmail && currentUser) {
+          adminUserEmail.textContent = currentUser.email;
+        }
+        if (!isAdmin) {
+          stopAdminRosterWatchers();
+          if (adminGroupsContainer) {
+            adminGroupsContainer.innerHTML = "";
+          }
+        } else {
+          renderAdminPanel();
+        }
       }
 
       function setPasswordVisibility(visible) {
@@ -676,6 +776,23 @@
         }
       }
 
+      function currentResetDateKey() {
+        try {
+          const formatter = new Intl.DateTimeFormat("en-CA", {
+            timeZone: RESET_TIMEZONE,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          });
+          return formatter.format(new Date());
+        } catch {
+          const today = new Date();
+          const month = String(today.getMonth() + 1).padStart(2, "0");
+          const day = String(today.getDate()).padStart(2, "0");
+          return `${today.getFullYear()}-${month}-${day}`;
+        }
+      }
+
       function updateActionButtons() {
         if (!currentUser || !currentGroupId) {
           joinButton.disabled = true;
@@ -755,6 +872,185 @@
         });
         populateList(offBusList, offBusSorted, "Everyone is already on board.");
         updateActionButtons();
+      }
+
+      function renderAdminPanel() {
+        if (!adminGroupsContainer) return;
+        if (!isAdmin) {
+          adminGroupsContainer.innerHTML = "";
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        const groupIds = Object.keys(GROUPS);
+        if (!groupIds.length) {
+          adminGroupsContainer.innerHTML = '<p class="muted">No groups configured.</p>';
+          return;
+        }
+
+        groupIds.forEach((groupId) => {
+          const card = document.createElement("div");
+          card.className = "admin-group-card";
+
+          const title = document.createElement("h3");
+          title.textContent = `Group ${groupLabel(groupId)}`;
+          card.appendChild(title);
+
+          const roster = adminRosterData.get(groupId) ?? [];
+          const onEntries = roster.filter((entry) => entry.isOnBus);
+          const offEntries = roster.filter((entry) => !entry.isOnBus);
+
+          const onLabel = document.createElement("p");
+          onLabel.className = "eyebrow";
+          onLabel.textContent = "On the bus";
+          card.appendChild(onLabel);
+
+          const onList = document.createElement("ul");
+          onList.className = "status-list";
+          const onSorted = [...onEntries].sort(
+            (a, b) => getTimestampValue(a.joinedAt) - getTimestampValue(b.joinedAt)
+          );
+          populateList(onList, onSorted, "Nobody is on the bus right now.", { showJoinedAt: true });
+          card.appendChild(onList);
+
+          const divider = document.createElement("div");
+          divider.className = "admin-group-divider";
+          card.appendChild(divider);
+
+          const offLabel = document.createElement("p");
+          offLabel.className = "eyebrow";
+          offLabel.textContent = "Not on the bus";
+          card.appendChild(offLabel);
+
+          const offList = document.createElement("ul");
+          offList.className = "status-list";
+          const offSorted = [...offEntries].sort((a, b) =>
+            (a.email ?? "").localeCompare(b.email ?? "", undefined, { sensitivity: "base" })
+          );
+          populateList(offList, offSorted, "Everybody is already on board.");
+          card.appendChild(offList);
+
+          fragment.appendChild(card);
+        });
+
+        adminGroupsContainer.replaceChildren(fragment);
+      }
+
+      function startAdminRosterWatchers() {
+        if (!isAdmin) return;
+        stopAdminRosterWatchers();
+        Object.keys(GROUPS).forEach((groupId) => {
+          const rosterRef = collection(db, "groups", groupId, "busRoster");
+          const unsubscribe = onSnapshot(
+            rosterRef,
+            (snapshot) => {
+              const roster = snapshot.docs.map((docSnap) => ({
+                id: docSnap.id,
+                ...docSnap.data(),
+              }));
+              adminRosterData.set(groupId, roster);
+              renderAdminPanel();
+            },
+            (error) => {
+              console.error(`Admin roster listener failed for group ${groupId}`, error);
+            }
+          );
+          adminRosterUnsubscribes.set(groupId, unsubscribe);
+        });
+        renderAdminPanel();
+      }
+
+      function stopAdminRosterWatchers() {
+        adminRosterUnsubscribes.forEach((unsubscribe) => {
+          try {
+            unsubscribe();
+          } catch {
+            /* ignore */
+          }
+        });
+        adminRosterUnsubscribes.clear();
+        adminRosterData.clear();
+        renderAdminPanel();
+      }
+
+      async function resetRosterForGroup(groupId) {
+        if (!groupId) return;
+        const rosterRef = collection(db, "groups", groupId, "busRoster");
+        const rosterSnapshot = await getDocs(rosterRef);
+        let batch = writeBatch(db);
+        let writes = 0;
+
+        async function commitBatch() {
+          if (!writes) return;
+          await batch.commit();
+          batch = writeBatch(db);
+          writes = 0;
+        }
+
+        for (const docSnap of rosterSnapshot.docs) {
+          batch.set(
+            docSnap.ref,
+            {
+              isOnBus: false,
+              joinedAt: null,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+          writes += 1;
+          if (writes >= 400) {
+            await commitBatch();
+          }
+        }
+
+        await commitBatch();
+        await setDoc(
+          doc(db, "groups", groupId),
+          {
+            lastResetAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+
+      async function ensureGlobalDailyReset() {
+        const todayKey = currentResetDateKey();
+        let needsReset = false;
+        try {
+          await runTransaction(db, async (transaction) => {
+            const snapshot = await transaction.get(RESET_CONTROL_REF);
+            const lastResetDate = snapshot.exists() ? snapshot.data().lastResetDate : null;
+            if (lastResetDate === todayKey) {
+              needsReset = false;
+              return;
+            }
+            needsReset = true;
+            transaction.set(
+              RESET_CONTROL_REF,
+              {
+                lastResetDate: todayKey,
+                updatedAt: serverTimestamp(),
+              },
+              { merge: true }
+            );
+          });
+        } catch (error) {
+          console.error("Unable to check reset schedule", error);
+          setRosterMessage("Unable to refresh today's roster.", true);
+          return;
+        }
+
+        if (!needsReset) return;
+
+        try {
+          const groupsSnapshot = await getDocs(collection(db, "groups"));
+          for (const groupSnap of groupsSnapshot.docs) {
+            await resetRosterForGroup(groupSnap.id);
+          }
+        } catch (error) {
+          console.error("Unable to reset all groups", error);
+          setRosterMessage("Unable to refresh today's roster.", true);
+        }
       }
 
       async function ensureRosterEntry(user, groupId) {
@@ -1028,13 +1324,19 @@
           setAuthMessage("Unable to sign out. Try again.", true);
         }
       });
+      if (adminSignOutButton) {
+        adminSignOutButton.addEventListener("click", () => signOutButton.click());
+      }
 
       onAuthStateChanged(auth, async (user) => {
         currentUser = user;
+        const adminStatus = user ? isAdminAccount(user) : false;
+        setAdminMode(adminStatus);
+
         if (user) {
           userEmailEl.textContent = user.email;
           setRosterMessage("");
-          setGroupMessage("Looking up your group…");
+          setGroupMessage(adminStatus ? "Admin overview" : "Looking up your group…");
           try {
             if (pendingIdentity && pendingIdentity.email === user.email) {
               await saveProfileFullName(user, pendingIdentity.fullName);
@@ -1061,7 +1363,17 @@
           } finally {
             pendingIdentity = null;
           }
-          startGroupWatcher(user);
+
+          if (adminStatus) {
+            await ensureGlobalDailyReset();
+            startAdminRosterWatchers();
+            stopGroupWatcher();
+            stopRosterSubscription();
+            currentGroupId = null;
+          } else {
+            stopAdminRosterWatchers();
+            startGroupWatcher(user);
+          }
         } else {
           userEmailEl.textContent = "—";
           setRosterMessage("");
@@ -1071,9 +1383,13 @@
           pendingIdentity = null;
           stopGroupWatcher();
           stopRosterSubscription();
+          stopAdminRosterWatchers();
+          setAdminMode(false);
         }
+
         toggleViews(Boolean(user));
         renderLists();
+        renderAdminPanel();
       });
 
       renderLists();
