@@ -294,6 +294,81 @@
         display: none;
       }
 
+      .admin-panel {
+        border-top: 1px solid var(--border);
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .admin-panel .eyebrow {
+        margin-bottom: 0.35rem;
+      }
+
+      .schedule-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+      }
+
+      .schedule-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem;
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .schedule-card h3 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .schedule-card label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        font-size: 0.85rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--subtle);
+      }
+
+      .schedule-card input[type="datetime-local"],
+      .schedule-card input[type="text"] {
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        padding: 0.65rem 0.85rem;
+        font-size: 0.95rem;
+        background: var(--card);
+        color: var(--text);
+      }
+
+      .schedule-card .offday-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        text-transform: none;
+        letter-spacing: 0;
+      }
+
+      .schedule-card .schedule-status {
+        font-size: 0.85rem;
+        color: var(--subtle);
+        min-height: 1.2rem;
+        margin: 0;
+      }
+
+      .schedule-card .form-actions {
+        margin-top: 0.25rem;
+        flex-direction: row;
+      }
+
       @media (max-width: 640px) {
         body {
           padding: 1.25rem;
@@ -396,6 +471,100 @@
         </div>
         <p class="muted" id="roster-message"></p>
         <p class="muted" id="group-message"></p>
+        <p class="muted" id="window-message"></p>
+
+        <div class="admin-panel hidden" id="schedule-panel" aria-live="polite">
+          <div>
+            <p class="eyebrow">Managers only</p>
+            <h2>Bus windows</h2>
+            <p class="muted">
+              Set when each group can join or leave the bus list, or mark off-days. Times use your local timezone.
+            </p>
+          </div>
+          <div class="schedule-grid">
+            <form class="schedule-card" data-group-schedule="A">
+              <h3>Group A</h3>
+              <p class="schedule-status" data-status></p>
+              <label>
+                Window opens
+                <input type="datetime-local" data-field="start" />
+              </label>
+              <label>
+                Window closes
+                <input type="datetime-local" data-field="end" />
+              </label>
+              <label class="offday-toggle">
+                <input type="checkbox" data-field="offday" />
+                Off day
+              </label>
+              <div class="form-actions">
+                <button type="button" class="ghost" data-action="clear">Clear</button>
+                <button type="submit">Save</button>
+              </div>
+            </form>
+            <form class="schedule-card" data-group-schedule="B">
+              <h3>Group B</h3>
+              <p class="schedule-status" data-status></p>
+              <label>
+                Window opens
+                <input type="datetime-local" data-field="start" />
+              </label>
+              <label>
+                Window closes
+                <input type="datetime-local" data-field="end" />
+              </label>
+              <label class="offday-toggle">
+                <input type="checkbox" data-field="offday" />
+                Off day
+              </label>
+              <div class="form-actions">
+                <button type="button" class="ghost" data-action="clear">Clear</button>
+                <button type="submit">Save</button>
+              </div>
+            </form>
+            <form class="schedule-card" data-group-schedule="C">
+              <h3>Group C</h3>
+              <p class="schedule-status" data-status></p>
+              <label>
+                Window opens
+                <input type="datetime-local" data-field="start" />
+              </label>
+              <label>
+                Window closes
+                <input type="datetime-local" data-field="end" />
+              </label>
+              <label class="offday-toggle">
+                <input type="checkbox" data-field="offday" />
+                Off day
+              </label>
+              <div class="form-actions">
+                <button type="button" class="ghost" data-action="clear">Clear</button>
+                <button type="submit">Save</button>
+              </div>
+            </form>
+            <form class="schedule-card" data-group-schedule="D">
+              <h3>Group D</h3>
+              <p class="schedule-status" data-status></p>
+              <label>
+                Window opens
+                <input type="datetime-local" data-field="start" />
+              </label>
+              <label>
+                Window closes
+                <input type="datetime-local" data-field="end" />
+              </label>
+              <label class="offday-toggle">
+                <input type="checkbox" data-field="offday" />
+                Off day
+              </label>
+              <div class="form-actions">
+                <button type="button" class="ghost" data-action="clear">Clear</button>
+                <button type="submit">Save</button>
+              </div>
+            </form>
+          </div>
+          <p class="muted" id="schedule-message"></p>
+        </div>
       </section>
     </main>
 
@@ -415,6 +584,9 @@
         getDoc,
         collection,
         onSnapshot,
+        getDocs,
+        writeBatch,
+        Timestamp,
         serverTimestamp,
       } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -433,10 +605,13 @@
         C: "C",
         D: "D",
       });
+      const GROUP_IDS = Object.keys(GROUPS);
+      const MAX_GROUP_MANAGERS = 3;
 
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
+      const managerConfigRef = doc(db, "appSettings", "groupManagers");
 
       const authCard = document.getElementById("auth-card");
       const siteHeader = document.getElementById("site-header");
@@ -457,6 +632,22 @@
       const offBusList = document.getElementById("off-bus");
       const userEmailEl = document.getElementById("user-email");
       const signOutButton = document.getElementById("sign-out");
+      const windowMessage = document.getElementById("window-message");
+      const schedulePanel = document.getElementById("schedule-panel");
+      const scheduleMessage = document.getElementById("schedule-message");
+      const scheduleForms = new Map();
+      document.querySelectorAll("[data-group-schedule]").forEach((form) => {
+        const groupId = form.dataset.groupSchedule;
+        if (!groupId) return;
+        scheduleForms.set(groupId, {
+          form,
+          startInput: form.querySelector('[data-field="start"]'),
+          endInput: form.querySelector('[data-field="end"]'),
+          offdayInput: form.querySelector('[data-field="offday"]'),
+          status: form.querySelector("[data-status]"),
+          clearButton: form.querySelector('[data-action="clear"]'),
+        });
+      });
 
       let authMode = "signin";
       let currentUser = null;
@@ -468,6 +659,14 @@
       let groupUnsubscribe = null;
       let selfEntry = null;
       let isRosterMutating = false;
+      let managerEmails = new Set();
+      let managerConfigUnsubscribe = null;
+      let scheduleBoardSubscriptions = new Map();
+      let currentSchedule = null;
+      let scheduleWatcherUnsubscribe = null;
+      let scheduleWindowStatus = { allowed: true, message: "" };
+      let isRosterResetting = false;
+      let scheduleWindowIntervalId = null;
 
       function toggleViews(isSignedIn) {
         if (isSignedIn) {
@@ -523,8 +722,52 @@
         return GROUPS[groupId] ?? groupId ?? "Unknown";
       }
 
+      function normalizeEmail(value) {
+        return typeof value === "string" ? value.trim().toLowerCase() : "";
+      }
+
+      function setWindowMessage(message = "", isError = false) {
+        if (!windowMessage) return;
+        windowMessage.textContent = message;
+        windowMessage.classList.toggle("error", isError);
+      }
+
       function sanitizeFullName(value) {
         return value ? value.replace(/\s+/g, " ").trim() : "";
+      }
+
+      function formatScheduleDate(date) {
+        if (!date) return "--:--";
+        try {
+          return new Intl.DateTimeFormat("en-US", {
+            weekday: "short",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          })
+            .format(date)
+            .toUpperCase();
+        } catch {
+          return "--:--";
+        }
+      }
+
+      function formatLocalInputValue(date) {
+        if (!date) return "";
+        const pad = (value) => String(value).padStart(2, "0");
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+          date.getHours()
+        )}:${pad(date.getMinutes())}`;
+      }
+
+      function parseLocalDateTime(value) {
+        if (!value) return null;
+        const [datePart, timePart] = value.split("T");
+        if (!datePart || !timePart) return null;
+        const [year, month, day] = datePart.split("-").map(Number);
+        const [hour, minute] = timePart.split(":").map(Number);
+        const parsed = new Date(year, (month ?? 1) - 1, day ?? 1, hour ?? 0, minute ?? 0);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
       }
 
       function rememberFullName(email, fullName) {
@@ -608,13 +851,63 @@
         const date = toDate(value);
         if (!date) return "--:--";
         try {
-          return new Intl.DateTimeFormat([], {
+          return new Intl.DateTimeFormat("en-US", {
             hour: "numeric",
             minute: "2-digit",
-          }).format(date);
+            hour12: true,
+          })
+            .format(date)
+            .toUpperCase();
         } catch {
           return "--:--";
         }
+      }
+
+      function evaluateScheduleWindow() {
+        if (
+          !currentSchedule ||
+          (!currentSchedule.isOffDay && !currentSchedule.windowStart && !currentSchedule.windowEnd)
+        ) {
+          return { allowed: true, message: "" };
+        }
+        if (currentSchedule.isOffDay) {
+          return { allowed: false, message: "Bus window closed today (off day)." };
+        }
+        const start = toDate(currentSchedule.windowStart);
+        const end = toDate(currentSchedule.windowEnd);
+        if (!start || !end) {
+          return { allowed: true, message: "" };
+        }
+        const now = new Date();
+        if (now < start) {
+          return {
+            allowed: false,
+            message: `Bus window opens at ${formatScheduleDate(start)}.`,
+          };
+        }
+        if (now > end) {
+          return {
+            allowed: false,
+            message: `Bus window closed at ${formatScheduleDate(end)}.`,
+          };
+        }
+        return {
+          allowed: true,
+          message: `Bus window closes at ${formatScheduleDate(end)}.`,
+        };
+      }
+
+      function updateScheduleWindowState() {
+        scheduleWindowStatus = evaluateScheduleWindow();
+        if (scheduleWindowStatus.message) {
+          setWindowMessage(scheduleWindowStatus.message, !scheduleWindowStatus.allowed);
+        } else {
+          setWindowMessage("");
+        }
+        if (currentGroupId) {
+          ensureRosterReset(currentGroupId, currentSchedule).catch(() => {});
+        }
+        updateActionButtons();
       }
 
       function updateActionButtons() {
@@ -626,8 +919,212 @@
         const entry =
           rosterEntries.find((record) => record.id === currentUser.uid) ?? selfEntry;
         const isOnBus = Boolean(entry?.isOnBus);
-        joinButton.disabled = isRosterMutating || isOnBus;
-        leaveButton.disabled = isRosterMutating || !isOnBus;
+        const windowOpen = scheduleWindowStatus.allowed || (!currentSchedule && Boolean(currentGroupId));
+        joinButton.disabled = isRosterMutating || !windowOpen || isOnBus;
+        leaveButton.disabled = isRosterMutating || !windowOpen || !isOnBus;
+      }
+
+      async function ensureRosterReset(groupId, schedule) {
+        if (isRosterResetting || !groupId || !schedule) return;
+        if (schedule.isOffDay) return;
+        const end = toDate(schedule.windowEnd);
+        if (!end) return;
+        const now = new Date();
+        if (now <= end) return;
+        const lastReset = toDate(schedule.lastResetAt);
+        if (lastReset && lastReset >= end) return;
+        isRosterResetting = true;
+        try {
+          const rosterRef = collection(db, "groups", groupId, "busRoster");
+          const snapshot = await getDocs(rosterRef);
+          const batch = writeBatch(db);
+          snapshot.forEach((docSnap) => {
+            batch.set(
+              docSnap.ref,
+              {
+                isOnBus: false,
+                joinedAt: null,
+                updatedAt: serverTimestamp(),
+              },
+              { merge: true }
+            );
+          });
+          batch.set(
+            doc(db, "groups", groupId),
+            {
+              lastResetAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+          await batch.commit();
+        } catch (error) {
+          console.error("Unable to reset roster", error);
+        } finally {
+          isRosterResetting = false;
+        }
+      }
+
+      function setScheduleMessage(message = "", isError = false) {
+        if (!scheduleMessage) return;
+        scheduleMessage.textContent = message;
+        scheduleMessage.classList.toggle("error", isError);
+      }
+
+      function hasManagerAccess() {
+        return Boolean(currentUser && managerEmails.has(normalizeEmail(currentUser.email)));
+      }
+
+      function setSchedulePanelVisibility(isVisible) {
+        if (!schedulePanel) return;
+        if (isVisible) {
+          schedulePanel.classList.remove("hidden");
+          schedulePanel.style.display = "";
+          schedulePanel.setAttribute("aria-hidden", "false");
+        } else {
+          schedulePanel.classList.add("hidden");
+          schedulePanel.style.display = "none";
+          schedulePanel.setAttribute("aria-hidden", "true");
+        }
+      }
+
+      function refreshSchedulePanelAccess() {
+        const canManage = hasManagerAccess();
+        setSchedulePanelVisibility(canManage);
+        if (!canManage) {
+          setScheduleMessage("");
+        }
+        if (canManage) {
+          startScheduleBoardWatcher();
+        } else {
+          stopScheduleBoardWatcher();
+        }
+      }
+
+      function startManagerConfigWatcher() {
+        if (managerConfigUnsubscribe || !managerConfigRef) return;
+        managerConfigUnsubscribe = onSnapshot(
+          managerConfigRef,
+          (snapshot) => {
+            const data = snapshot.data();
+            if (data && Array.isArray(data.emails)) {
+              managerEmails = new Set(
+                data.emails
+                  .slice(0, MAX_GROUP_MANAGERS)
+                  .map((email) => normalizeEmail(email))
+                  .filter(Boolean)
+              );
+            } else {
+              managerEmails = new Set();
+            }
+            refreshSchedulePanelAccess();
+          },
+          (error) => {
+            console.error("Manager config listener error", error);
+            managerEmails = new Set();
+            refreshSchedulePanelAccess();
+          }
+        );
+      }
+
+      function startScheduleBoardWatcher() {
+        GROUP_IDS.forEach((groupId) => {
+          if (scheduleBoardSubscriptions.has(groupId)) return;
+          const ref = doc(db, "groups", groupId);
+          const unsubscribe = onSnapshot(
+            ref,
+            (snapshot) => {
+              updateScheduleForm(groupId, snapshot.exists() ? snapshot.data() : null);
+            },
+            (error) => {
+              console.error("Schedule board listener error", error);
+              setScheduleMessage("Unable to load schedules.", true);
+            }
+          );
+          scheduleBoardSubscriptions.set(groupId, unsubscribe);
+        });
+      }
+
+      function stopScheduleBoardWatcher() {
+        scheduleBoardSubscriptions.forEach((unsubscribe) => unsubscribe());
+        scheduleBoardSubscriptions.clear();
+      }
+
+      function updateScheduleForm(groupId, data) {
+        const view = scheduleForms.get(groupId);
+        if (!view) return;
+        const startDate = toDate(data?.windowStart);
+        const endDate = toDate(data?.windowEnd);
+        view.startInput.value = startDate ? formatLocalInputValue(startDate) : "";
+        view.endInput.value = endDate ? formatLocalInputValue(endDate) : "";
+        view.offdayInput.checked = Boolean(data?.isOffDay);
+        const summary = buildScheduleSummary(data);
+        if (view.status) {
+          view.status.textContent = summary;
+        }
+      }
+
+      function buildScheduleSummary(data) {
+        if (!data) return "No window set.";
+        if (data.isOffDay) return "Off day";
+        const startDate = toDate(data.windowStart);
+        const endDate = toDate(data.windowEnd);
+        if (!startDate || !endDate) return "Window not configured.";
+        return `${formatScheduleDate(startDate)} – ${formatScheduleDate(endDate)}`;
+      }
+
+      function setScheduleFormDisabled(view, disabled) {
+        const controls = view.form.querySelectorAll("input, button");
+        controls.forEach((control) => {
+          control.disabled = disabled;
+        });
+      }
+
+      function clearScheduleInputs(groupId) {
+        const view = scheduleForms.get(groupId);
+        if (!view) return;
+        view.startInput.value = "";
+        view.endInput.value = "";
+        view.offdayInput.checked = false;
+      }
+
+      async function handleScheduleSave(groupId) {
+        const view = scheduleForms.get(groupId);
+        if (!view) return;
+        if (!hasManagerAccess()) {
+          setScheduleMessage("You do not have access to change schedules.", true);
+          return;
+        }
+        const isOffDay = view.offdayInput.checked;
+        const startDate = parseLocalDateTime(view.startInput.value);
+        const endDate = parseLocalDateTime(view.endInput.value);
+        if (!isOffDay) {
+          if (!startDate || !endDate) {
+            setScheduleMessage("Set both window times before saving.", true);
+            return;
+          }
+          if (endDate <= startDate) {
+            setScheduleMessage("Window closes after it opens. Adjust the times.", true);
+            return;
+          }
+        }
+        setScheduleFormDisabled(view, true);
+        try {
+          const payload = {
+            updatedAt: serverTimestamp(),
+            updatedBy: currentUser?.email ?? null,
+            isOffDay,
+            windowStart: isOffDay || !startDate ? null : Timestamp.fromDate(startDate),
+            windowEnd: isOffDay || !endDate ? null : Timestamp.fromDate(endDate),
+            lastResetAt: null,
+          };
+          await setDoc(doc(db, "groups", groupId), payload, { merge: true });
+          setScheduleMessage(`Saved the window for group ${groupId}.`);
+        } catch (error) {
+          console.error("Unable to save schedule", error);
+          setScheduleMessage("Unable to save that schedule. Try again.", true);
+        } finally {
+          setScheduleFormDisabled(view, false);
+        }
       }
 
       function createListItem(entry, { showJoinedAt = false } = {}) {
@@ -640,13 +1137,6 @@
         nameSpan.className = "person-name";
         nameSpan.textContent = entry.fullName ?? entry.email ?? "Unknown rider";
         person.appendChild(nameSpan);
-
-        if (entry.email) {
-          const emailSpan = document.createElement("span");
-          emailSpan.className = "person-email";
-          emailSpan.textContent = entry.email;
-          person.appendChild(emailSpan);
-        }
 
         li.appendChild(person);
 
@@ -807,6 +1297,55 @@
           groupUnsubscribe();
           groupUnsubscribe = null;
         }
+        stopScheduleWatcher();
+      }
+
+      function startScheduleWatcher(groupId) {
+        stopScheduleWatcher();
+        if (!groupId) {
+          currentSchedule = null;
+          updateScheduleWindowState();
+          return;
+        }
+        startScheduleWindowTimer();
+        const scheduleRef = doc(db, "groups", groupId);
+        scheduleWatcherUnsubscribe = onSnapshot(
+          scheduleRef,
+          (snapshot) => {
+            currentSchedule = snapshot.exists() ? snapshot.data() : null;
+            updateScheduleWindowState();
+          },
+          (error) => {
+            console.error("Schedule listener error", error);
+            currentSchedule = null;
+            setWindowMessage("Unable to load your schedule.", true);
+            updateScheduleWindowState();
+          }
+        );
+      }
+
+      function stopScheduleWatcher() {
+        if (scheduleWatcherUnsubscribe) {
+          scheduleWatcherUnsubscribe();
+          scheduleWatcherUnsubscribe = null;
+        }
+        stopScheduleWindowTimer();
+        currentSchedule = null;
+        updateScheduleWindowState();
+      }
+
+      function startScheduleWindowTimer() {
+        if (scheduleWindowIntervalId) return;
+        scheduleWindowIntervalId = setInterval(() => {
+          updateScheduleWindowState();
+        }, 30000);
+      }
+
+      function stopScheduleWindowTimer() {
+        if (scheduleWindowIntervalId) {
+          clearInterval(scheduleWindowIntervalId);
+          scheduleWindowIntervalId = null;
+        }
       }
 
       async function handleGroupSnapshot(snapshot) {
@@ -837,6 +1376,7 @@
         stopRosterSubscription();
         await ensureRosterEntry(currentUser, groupId);
         startRosterSubscription(groupId);
+        startScheduleWatcher(groupId);
       }
 
       async function updateBusStatus(targetState) {
@@ -844,6 +1384,13 @@
           if (!currentGroupId) {
             setRosterMessage("You need a group before toggling the bus.", true);
           }
+          return;
+        }
+        if (!scheduleWindowStatus.allowed) {
+          setRosterMessage(
+            scheduleWindowStatus.message || "The bus window is closed. Wait for the next window.",
+            true
+          );
           return;
         }
         isRosterMutating = true;
@@ -958,6 +1505,17 @@
         }
       });
 
+      scheduleForms.forEach(({ form, clearButton }, groupId) => {
+        form.addEventListener("submit", (event) => {
+          event.preventDefault();
+          handleScheduleSave(groupId);
+        });
+        clearButton?.addEventListener("click", () => {
+          if (!hasManagerAccess()) return;
+          clearScheduleInputs(groupId);
+        });
+      });
+
       joinButton.addEventListener("click", () => updateBusStatus(true));
       leaveButton.addEventListener("click", () => updateBusStatus(false));
 
@@ -972,6 +1530,7 @@
 
       onAuthStateChanged(auth, async (user) => {
         currentUser = user;
+        refreshSchedulePanelAccess();
         if (user) {
           userEmailEl.textContent = user.email;
           setRosterMessage("");
@@ -1017,6 +1576,7 @@
         renderLists();
       });
 
+      startManagerConfigWatcher();
       renderLists();
     </script>
   </body>
