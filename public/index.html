@@ -376,6 +376,26 @@
         background: var(--border);
       }
 
+      body.app-loading {
+        position: relative;
+      }
+
+      body.app-loading main {
+        visibility: hidden;
+      }
+
+      body.app-loading::before {
+        content: "Loading…";
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg);
+        color: var(--subtle);
+        font-size: 0.95rem;
+      }
+
       @media (max-width: 640px) {
         body {
           padding: 1.25rem;
@@ -392,7 +412,7 @@
       }
     </style>
   </head>
-  <body>
+  <body class="app-loading">
     <main>
       <header id="site-header">
         <h1>Bus Status</h1>
@@ -548,7 +568,6 @@
       const auth = getAuth(app);
       const db = getFirestore(app);
       const RESET_TIMEZONE = "Europe/Istanbul";
-      const RESET_CONTROL_REF = doc(db, "systemSettings", "dailyRosterReset");
 
       const authCard = document.getElementById("auth-card");
       const siteHeader = document.getElementById("site-header");
@@ -788,6 +807,29 @@
         }
       }
 
+      function dateKeyFor(value) {
+        const date = toDate(value);
+        if (!date) return "";
+        try {
+          const formatter = new Intl.DateTimeFormat("en-CA", {
+            timeZone: RESET_TIMEZONE,
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          });
+          return formatter.format(date);
+        } catch {
+          const month = String(date.getMonth() + 1).padStart(2, "0");
+          const day = String(date.getDate()).padStart(2, "0");
+          return `${date.getFullYear()}-${month}-${day}`;
+        }
+      }
+
+      function isOnBusToday(entry) {
+        if (!entry || !entry.isOnBus || !entry.joinedAt) return false;
+        return dateKeyFor(entry.joinedAt) === currentResetDateKey();
+      }
+
       function updateActionButtons() {
         if (!currentUser || !currentGroupId) {
           joinButton.disabled = true;
@@ -796,7 +838,7 @@
         }
         const entry =
           rosterEntries.find((record) => record.id === currentUser.uid) ?? selfEntry;
-        const isOnBus = Boolean(entry?.isOnBus);
+        const isOnBus = isOnBusToday(entry);
         joinButton.disabled = isRosterMutating || isOnBus;
         leaveButton.disabled = isRosterMutating || !isOnBus;
       }
@@ -852,8 +894,8 @@
           return;
         }
 
-        const onBusEntries = rosterEntries.filter((entry) => entry.isOnBus);
-        const offBusEntries = rosterEntries.filter((entry) => !entry.isOnBus);
+        const onBusEntries = rosterEntries.filter((entry) => isOnBusToday(entry));
+        const offBusEntries = rosterEntries.filter((entry) => !isOnBusToday(entry));
 
         const onBusSorted = [...onBusEntries].sort(
           (a, b) => getTimestampValue(a.joinedAt) - getTimestampValue(b.joinedAt)
@@ -892,8 +934,8 @@
           card.appendChild(title);
 
           const roster = adminRosterData.get(groupId) ?? [];
-          const onEntries = roster.filter((entry) => entry.isOnBus);
-          const offEntries = roster.filter((entry) => !entry.isOnBus);
+          const onEntries = roster.filter((entry) => isOnBusToday(entry));
+          const offEntries = roster.filter((entry) => !isOnBusToday(entry));
 
           const onLabel = document.createElement("p");
           onLabel.className = "eyebrow";
@@ -966,86 +1008,6 @@
         adminRosterUnsubscribes.clear();
         adminRosterData.clear();
         renderAdminPanel();
-      }
-
-      async function resetRosterForGroup(groupId) {
-        if (!groupId) return;
-        const rosterRef = collection(db, "groups", groupId, "busRoster");
-        const rosterSnapshot = await getDocs(rosterRef);
-        let batch = writeBatch(db);
-        let writes = 0;
-
-        async function commitBatch() {
-          if (!writes) return;
-          await batch.commit();
-          batch = writeBatch(db);
-          writes = 0;
-        }
-
-        for (const docSnap of rosterSnapshot.docs) {
-          batch.set(
-            docSnap.ref,
-            {
-              isOnBus: false,
-              joinedAt: null,
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true }
-          );
-          writes += 1;
-          if (writes >= 400) {
-            await commitBatch();
-          }
-        }
-
-        await commitBatch();
-        await setDoc(
-          doc(db, "groups", groupId),
-          {
-            lastResetAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
-      }
-
-      async function ensureGlobalDailyReset() {
-        const todayKey = currentResetDateKey();
-        let needsReset = false;
-        try {
-          await runTransaction(db, async (transaction) => {
-            const snapshot = await transaction.get(RESET_CONTROL_REF);
-            const lastResetDate = snapshot.exists() ? snapshot.data().lastResetDate : null;
-            if (lastResetDate === todayKey) {
-              needsReset = false;
-              return;
-            }
-            needsReset = true;
-            transaction.set(
-              RESET_CONTROL_REF,
-              {
-                lastResetDate: todayKey,
-                updatedAt: serverTimestamp(),
-              },
-              { merge: true }
-            );
-          });
-        } catch (error) {
-          console.error("Unable to check reset schedule", error);
-          setRosterMessage("Unable to refresh today's roster.", true);
-          return;
-        }
-
-        if (!needsReset) return;
-
-        try {
-          const groupsSnapshot = await getDocs(collection(db, "groups"));
-          for (const groupSnap of groupsSnapshot.docs) {
-            await resetRosterForGroup(groupSnap.id);
-          }
-        } catch (error) {
-          console.error("Unable to reset all groups", error);
-          setRosterMessage("Unable to refresh today's roster.", true);
-        }
       }
 
       async function ensureRosterEntry(user, groupId) {
@@ -1384,6 +1346,7 @@
         toggleViews(Boolean(user));
         renderLists();
         renderAdminPanel();
+        document.body.classList.remove("app-loading");
       });
 
       renderLists();
