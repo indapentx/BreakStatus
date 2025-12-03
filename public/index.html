@@ -361,6 +361,18 @@
         gap: 0.75rem;
       }
 
+      .admin-group-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .admin-toggle {
+        padding: 0.45rem 0.9rem;
+        font-size: 0.85rem;
+      }
+
       .admin-group-card h3 {
         margin: 0;
         letter-spacing: -0.01em;
@@ -369,6 +381,20 @@
 
       .admin-group-card .status-list {
         background: transparent;
+      }
+
+      .admin-group-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .admin-group-card.minimized {
+        opacity: 0.9;
+      }
+
+      .admin-group-card.minimized .admin-group-body {
+        display: none;
       }
 
       .admin-group-divider {
@@ -417,9 +443,7 @@
     <main>
       <header id="site-header">
         <h1>Break Status</h1>
-        <p>
-          Track who is on break right now. Made by Furkan Öztürk for Trend ISG.
-        </p>
+        <p>Made by Furkan Öztürk for Trend ISG.</p>
       </header>
 
       <section class="card auth-card" id="auth-card">
@@ -632,6 +656,7 @@
       let isAdmin = false;
       const adminRosterData = new Map();
       const adminRosterUnsubscribes = new Map();
+      const minimizedAdminGroups = new Set();
 
       function toggleViews(isSignedIn) {
         if (isSignedIn) {
@@ -974,31 +999,70 @@
           return;
         }
 
-        const fragment = document.createDocumentFragment();
         const groupIds = Object.keys(GROUPS);
         if (!groupIds.length) {
           adminGroupsContainer.innerHTML = '<p class="muted">No groups configured.</p>';
           return;
         }
 
-        groupIds.forEach((groupId) => {
-          const card = document.createElement("div");
-          card.className = "admin-group-card";
+        if (minimizedAdminGroups.size >= groupIds.length) {
+          minimizedAdminGroups.delete(groupIds[0]);
+        }
 
-          const title = document.createElement("h3");
-          title.textContent = `Group ${groupLabel(groupId)}`;
-          card.appendChild(title);
+        const expandedGroupIds = groupIds.filter((id) => !minimizedAdminGroups.has(id));
+        const minimizedGroupIds = groupIds.filter((id) => minimizedAdminGroups.has(id));
+        const orderedGroupIds = [...expandedGroupIds, ...minimizedGroupIds];
+        const fragment = document.createDocumentFragment();
 
+        orderedGroupIds.forEach((groupId) => {
           const roster = adminRosterData.get(groupId) ?? [];
           const onEntries = roster.filter((entry) => isOnBreakToday(entry));
           const offEntries = roster.filter((entry) => !isOnBreakToday(entry));
           const onMealEntries = roster.filter((entry) => isOnMealBreakToday(entry));
           const offMealEntries = roster.filter((entry) => !isOnMealBreakToday(entry));
+          const isMinimized = minimizedAdminGroups.has(groupId);
+
+          const card = document.createElement("div");
+          card.className = `admin-group-card${isMinimized ? " minimized" : ""}`;
+
+          const header = document.createElement("div");
+          header.className = "admin-group-header";
+
+          const title = document.createElement("h3");
+          title.textContent = `Group ${groupLabel(groupId)}`;
+          header.appendChild(title);
+
+          const toggleButton = document.createElement("button");
+          toggleButton.type = "button";
+          toggleButton.className = "ghost admin-toggle";
+          toggleButton.textContent = isMinimized ? "Expand" : "Collapse";
+          toggleButton.setAttribute("aria-pressed", String(isMinimized));
+          toggleButton.setAttribute("aria-expanded", String(!isMinimized));
+          const expandedCount = groupIds.length - minimizedAdminGroups.size;
+          toggleButton.disabled = !isMinimized && expandedCount <= 1;
+          toggleButton.addEventListener("click", () => {
+            const currentlyMinimized = minimizedAdminGroups.has(groupId);
+            const expandedNow = groupIds.length - minimizedAdminGroups.size;
+            if (!currentlyMinimized && expandedNow <= 1) {
+              return;
+            }
+            if (currentlyMinimized) {
+              minimizedAdminGroups.delete(groupId);
+            } else {
+              minimizedAdminGroups.add(groupId);
+            }
+            renderAdminPanel();
+          });
+          header.appendChild(toggleButton);
+          card.appendChild(header);
+
+          const body = document.createElement("div");
+          body.className = "admin-group-body";
 
           const onLabel = document.createElement("p");
           onLabel.className = "eyebrow";
           onLabel.textContent = "On break";
-          card.appendChild(onLabel);
+          body.appendChild(onLabel);
 
           const onList = document.createElement("ul");
           onList.className = "status-list";
@@ -1006,16 +1070,16 @@
             (a, b) => getTimestampValue(a.joinedAt) - getTimestampValue(b.joinedAt)
           );
           populateList(onList, onSorted, "Nobody is on break right now.", { showJoinedAt: true });
-          card.appendChild(onList);
+          body.appendChild(onList);
 
           const divider = document.createElement("div");
           divider.className = "admin-group-divider";
-          card.appendChild(divider);
+          body.appendChild(divider);
 
           const offLabel = document.createElement("p");
           offLabel.className = "eyebrow";
           offLabel.textContent = "Working";
-          card.appendChild(offLabel);
+          body.appendChild(offLabel);
 
           const offList = document.createElement("ul");
           offList.className = "status-list";
@@ -1023,16 +1087,16 @@
             (a.email ?? "").localeCompare(b.email ?? "", undefined, { sensitivity: "base" })
           );
           populateList(offList, offSorted, "Nobody is working right now.");
-          card.appendChild(offList);
+          body.appendChild(offList);
 
           const dividerMeal = document.createElement("div");
           dividerMeal.className = "admin-group-divider";
-          card.appendChild(dividerMeal);
+          body.appendChild(dividerMeal);
 
           const onMealLabel = document.createElement("p");
           onMealLabel.className = "eyebrow";
           onMealLabel.textContent = "On meal break";
-          card.appendChild(onMealLabel);
+          body.appendChild(onMealLabel);
 
           const onMealList = document.createElement("ul");
           onMealList.className = "status-list";
@@ -1043,16 +1107,16 @@
             showJoinedAt: true,
             joinedAtKey: "mealJoinedAt",
           });
-          card.appendChild(onMealList);
+          body.appendChild(onMealList);
 
           const dividerMealOff = document.createElement("div");
           dividerMealOff.className = "admin-group-divider";
-          card.appendChild(dividerMealOff);
+          body.appendChild(dividerMealOff);
 
           const offMealLabel = document.createElement("p");
           offMealLabel.className = "eyebrow";
           offMealLabel.textContent = "Not on meal break";
-          card.appendChild(offMealLabel);
+          body.appendChild(offMealLabel);
 
           const offMealList = document.createElement("ul");
           offMealList.className = "status-list";
@@ -1060,8 +1124,9 @@
             (a.email ?? "").localeCompare(b.email ?? "", undefined, { sensitivity: "base" })
           );
           populateList(offMealList, offMealSorted, "Everyone is on meal break.");
-          card.appendChild(offMealList);
+          body.appendChild(offMealList);
 
+          card.appendChild(body);
           fragment.appendChild(card);
         });
 
