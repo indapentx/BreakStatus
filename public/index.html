@@ -238,6 +238,7 @@
         gap: 1rem;
       }
 
+
       .eyebrow {
         text-transform: uppercase;
         font-size: 0.75rem;
@@ -415,9 +416,9 @@
   <body class="app-loading">
     <main>
       <header id="site-header">
-        <h1>Bus Status</h1>
+        <h1>Break Status</h1>
         <p>
-          Made by Furkan Öztürk for Trend ISG.
+          Track who is on break right now. Made by Furkan Öztürk for Trend ISG.
         </p>
       </header>
 
@@ -468,11 +469,11 @@
               </button>
             </div>
           </label>
-          <div class="form-actions">
-            <button type="submit" id="auth-submit">Sign In</button>
-          </div>
-        </form>
-        <p class="muted" id="auth-message">Use your credentials to access the dashboard.</p>
+        <div class="form-actions">
+          <button type="submit" id="auth-submit">Sign In</button>
+        </div>
+      </form>
+        <p class="muted" id="auth-message">Use your credentials to access the break list.</p>
       </section>
 
       <section class="card dashboard hidden" id="dashboard">
@@ -487,20 +488,40 @@
         <div class="lists">
           <div class="list-column">
             <div class="list-header">
-              <h2>On the bus</h2>
-              <button id="leave-btn" class="ghost" type="button" disabled>Leave list</button>
+              <h2>On break</h2>
+              <button id="leave-btn" class="ghost" type="button" disabled>Return</button>
             </div>
-            <ul class="status-list" id="on-bus">
-              <li class="empty">Sign in to see the roster.</li>
+            <ul class="status-list" id="on-break">
+              <li class="empty">Sign in to see the break list.</li>
             </ul>
           </div>
           <div class="list-column">
             <div class="list-header">
-              <h2>Not on the bus</h2>
-              <button id="join-btn" type="button" disabled>Join bus</button>
+              <h2>Working</h2>
+              <button id="join-btn" type="button" disabled>Start break</button>
             </div>
-            <ul class="status-list" id="off-bus">
-              <li class="empty">Sign in to see the roster.</li>
+            <ul class="status-list" id="off-break">
+              <li class="empty">Sign in to see the break list.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lists">
+          <div class="list-column">
+            <div class="list-header">
+              <h2>On meal break</h2>
+              <button id="meal-leave-btn" class="ghost" type="button" disabled>End meal</button>
+            </div>
+            <ul class="status-list" id="on-meal-break">
+              <li class="empty">Sign in to see the meal break list.</li>
+            </ul>
+          </div>
+          <div class="list-column">
+            <div class="list-header">
+              <h2>Not on meal break</h2>
+              <button id="meal-join-btn" type="button" disabled>Start meal</button>
+            </div>
+            <ul class="status-list" id="off-meal-break">
+              <li class="empty">Sign in to see the meal break list.</li>
             </ul>
           </div>
         </div>
@@ -570,7 +591,6 @@
       const RESET_TIMEZONE = "Europe/Istanbul";
 
       const authCard = document.getElementById("auth-card");
-      const siteHeader = document.getElementById("site-header");
       const dashboard = document.getElementById("dashboard");
       const authForm = document.getElementById("auth-form");
       const emailInput = document.getElementById("email");
@@ -585,8 +605,12 @@
       const groupMessage = document.getElementById("group-message");
       const joinButton = document.getElementById("join-btn");
       const leaveButton = document.getElementById("leave-btn");
-      const onBusList = document.getElementById("on-bus");
-      const offBusList = document.getElementById("off-bus");
+      const onBreakList = document.getElementById("on-break");
+      const offBreakList = document.getElementById("off-break");
+      const mealJoinButton = document.getElementById("meal-join-btn");
+      const mealLeaveButton = document.getElementById("meal-leave-btn");
+      const onMealBreakList = document.getElementById("on-meal-break");
+      const offMealBreakList = document.getElementById("off-meal-break");
       const userEmailEl = document.getElementById("user-email");
       const signOutButton = document.getElementById("sign-out");
       const adminPanel = document.getElementById("admin-panel");
@@ -825,25 +849,39 @@
         }
       }
 
-      function isOnBusToday(entry) {
-        if (!entry || !entry.isOnBus || !entry.joinedAt) return false;
+      function isOnBreakToday(entry) {
+        const onBreak = entry?.isOnBreak;
+        if (!entry || !onBreak || !entry.joinedAt) return false;
         return dateKeyFor(entry.joinedAt) === currentResetDateKey();
+      }
+
+      function isOnMealBreakToday(entry) {
+        const onMealBreak = entry?.isOnMealBreak;
+        if (!entry || !onMealBreak || !entry.mealJoinedAt) return false;
+        return dateKeyFor(entry.mealJoinedAt) === currentResetDateKey();
       }
 
       function updateActionButtons() {
         if (!currentUser || !currentGroupId) {
-          joinButton.disabled = true;
-          leaveButton.disabled = true;
+          if (joinButton) joinButton.disabled = true;
+          if (leaveButton) leaveButton.disabled = true;
+          if (mealJoinButton) mealJoinButton.disabled = true;
+          if (mealLeaveButton) mealLeaveButton.disabled = true;
           return;
         }
         const entry =
           rosterEntries.find((record) => record.id === currentUser.uid) ?? selfEntry;
-        const isOnBus = isOnBusToday(entry);
-        joinButton.disabled = isRosterMutating || isOnBus;
-        leaveButton.disabled = isRosterMutating || !isOnBus;
+        const isOnBreak = isOnBreakToday(entry);
+        const isOnMealBreak = isOnMealBreakToday(entry);
+        const disableBreakJoin = isRosterMutating || isOnBreak || isOnMealBreak;
+        const disableMealJoin = isRosterMutating || isOnMealBreak || isOnBreak;
+        if (joinButton) joinButton.disabled = disableBreakJoin;
+        if (leaveButton) leaveButton.disabled = isRosterMutating || !isOnBreak;
+        if (mealJoinButton) mealJoinButton.disabled = disableMealJoin;
+        if (mealLeaveButton) mealLeaveButton.disabled = isRosterMutating || !isOnMealBreak;
       }
 
-      function createListItem(entry, { showJoinedAt = false } = {}) {
+      function createListItem(entry, { showJoinedAt = false, joinedAtKey = "joinedAt" } = {}) {
         const li = document.createElement("li");
 
         const person = document.createElement("span");
@@ -851,15 +889,16 @@
 
         const nameSpan = document.createElement("span");
         nameSpan.className = "person-name";
-        nameSpan.textContent = entry.fullName ?? entry.email ?? "Unknown rider";
+        nameSpan.textContent = entry.fullName ?? entry.email ?? "Unknown worker";
         person.appendChild(nameSpan);
 
         li.appendChild(person);
 
-        if (showJoinedAt && entry.joinedAt) {
+        const joinedValue = joinedAtKey ? entry?.[joinedAtKey] : null;
+        if (showJoinedAt && joinedValue) {
           const timeSpan = document.createElement("span");
           timeSpan.className = "time-badge";
-          timeSpan.textContent = formatTime(entry.joinedAt);
+          timeSpan.textContent = formatTime(joinedValue);
           li.appendChild(timeSpan);
         }
 
@@ -880,34 +919,51 @@
 
       function renderLists() {
         if (!currentUser) {
-          onBusList.innerHTML = '<li class="empty">Sign in to see the roster.</li>';
-          offBusList.innerHTML = '<li class="empty">Sign in to see the roster.</li>';
+          onBreakList.innerHTML = '<li class="empty">Sign in to see the break list.</li>';
+          offBreakList.innerHTML = '<li class="empty">Sign in to see the break list.</li>';
+          onMealBreakList.innerHTML = '<li class="empty">Sign in to see the meal break list.</li>';
+          offMealBreakList.innerHTML = '<li class="empty">Sign in to see the meal break list.</li>';
           updateActionButtons();
           return;
         }
 
         if (!currentGroupId) {
           const awaiting = "Waiting for a group assignment.";
-          onBusList.innerHTML = `<li class="empty">${awaiting}</li>`;
-          offBusList.innerHTML = `<li class="empty">${awaiting}</li>`;
+          onBreakList.innerHTML = `<li class="empty">${awaiting}</li>`;
+          offBreakList.innerHTML = `<li class="empty">${awaiting}</li>`;
+          onMealBreakList.innerHTML = `<li class="empty">${awaiting}</li>`;
+          offMealBreakList.innerHTML = `<li class="empty">${awaiting}</li>`;
           updateActionButtons();
           return;
         }
 
-        const onBusEntries = rosterEntries.filter((entry) => isOnBusToday(entry));
-        const offBusEntries = rosterEntries.filter((entry) => !isOnBusToday(entry));
+        const onBreakEntries = rosterEntries.filter((entry) => isOnBreakToday(entry));
+        const workingEntries = rosterEntries.filter((entry) => !isOnBreakToday(entry));
+        const onMealBreakEntries = rosterEntries.filter((entry) => isOnMealBreakToday(entry));
+        const offMealBreakEntries = rosterEntries.filter((entry) => !isOnMealBreakToday(entry));
 
-        const onBusSorted = [...onBusEntries].sort(
+        const onBreakSorted = [...onBreakEntries].sort(
           (a, b) => getTimestampValue(a.joinedAt) - getTimestampValue(b.joinedAt)
         );
-        const offBusSorted = [...offBusEntries].sort((a, b) =>
+        const workingSorted = [...workingEntries].sort((a, b) =>
+          (a.email ?? "").localeCompare(b.email ?? "", undefined, { sensitivity: "base" })
+        );
+        const onMealBreakSorted = [...onMealBreakEntries].sort(
+          (a, b) => getTimestampValue(a.mealJoinedAt) - getTimestampValue(b.mealJoinedAt)
+        );
+        const offMealBreakSorted = [...offMealBreakEntries].sort((a, b) =>
           (a.email ?? "").localeCompare(b.email ?? "", undefined, { sensitivity: "base" })
         );
 
-        populateList(onBusList, onBusSorted, "Nobody is on the bus right now.", {
+        populateList(onBreakList, onBreakSorted, "Nobody is on break right now.", {
           showJoinedAt: true,
         });
-        populateList(offBusList, offBusSorted, "Everyone is already on board.");
+        populateList(offBreakList, workingSorted, "Nobody is working right now.");
+        populateList(onMealBreakList, onMealBreakSorted, "Nobody is on meal break right now.", {
+          showJoinedAt: true,
+          joinedAtKey: "mealJoinedAt",
+        });
+        populateList(offMealBreakList, offMealBreakSorted, "Everyone is on meal break.");
         updateActionButtons();
       }
 
@@ -934,12 +990,14 @@
           card.appendChild(title);
 
           const roster = adminRosterData.get(groupId) ?? [];
-          const onEntries = roster.filter((entry) => isOnBusToday(entry));
-          const offEntries = roster.filter((entry) => !isOnBusToday(entry));
+          const onEntries = roster.filter((entry) => isOnBreakToday(entry));
+          const offEntries = roster.filter((entry) => !isOnBreakToday(entry));
+          const onMealEntries = roster.filter((entry) => isOnMealBreakToday(entry));
+          const offMealEntries = roster.filter((entry) => !isOnMealBreakToday(entry));
 
           const onLabel = document.createElement("p");
           onLabel.className = "eyebrow";
-          onLabel.textContent = "On the bus";
+          onLabel.textContent = "On break";
           card.appendChild(onLabel);
 
           const onList = document.createElement("ul");
@@ -947,7 +1005,7 @@
           const onSorted = [...onEntries].sort(
             (a, b) => getTimestampValue(a.joinedAt) - getTimestampValue(b.joinedAt)
           );
-          populateList(onList, onSorted, "Nobody is on the bus right now.", { showJoinedAt: true });
+          populateList(onList, onSorted, "Nobody is on break right now.", { showJoinedAt: true });
           card.appendChild(onList);
 
           const divider = document.createElement("div");
@@ -956,7 +1014,7 @@
 
           const offLabel = document.createElement("p");
           offLabel.className = "eyebrow";
-          offLabel.textContent = "Not on the bus";
+          offLabel.textContent = "Working";
           card.appendChild(offLabel);
 
           const offList = document.createElement("ul");
@@ -964,8 +1022,45 @@
           const offSorted = [...offEntries].sort((a, b) =>
             (a.email ?? "").localeCompare(b.email ?? "", undefined, { sensitivity: "base" })
           );
-          populateList(offList, offSorted, "Everybody is already on board.");
+          populateList(offList, offSorted, "Nobody is working right now.");
           card.appendChild(offList);
+
+          const dividerMeal = document.createElement("div");
+          dividerMeal.className = "admin-group-divider";
+          card.appendChild(dividerMeal);
+
+          const onMealLabel = document.createElement("p");
+          onMealLabel.className = "eyebrow";
+          onMealLabel.textContent = "On meal break";
+          card.appendChild(onMealLabel);
+
+          const onMealList = document.createElement("ul");
+          onMealList.className = "status-list";
+          const onMealSorted = [...onMealEntries].sort(
+            (a, b) => getTimestampValue(a.mealJoinedAt) - getTimestampValue(b.mealJoinedAt)
+          );
+          populateList(onMealList, onMealSorted, "Nobody is on meal break right now.", {
+            showJoinedAt: true,
+            joinedAtKey: "mealJoinedAt",
+          });
+          card.appendChild(onMealList);
+
+          const dividerMealOff = document.createElement("div");
+          dividerMealOff.className = "admin-group-divider";
+          card.appendChild(dividerMealOff);
+
+          const offMealLabel = document.createElement("p");
+          offMealLabel.className = "eyebrow";
+          offMealLabel.textContent = "Not on meal break";
+          card.appendChild(offMealLabel);
+
+          const offMealList = document.createElement("ul");
+          offMealList.className = "status-list";
+          const offMealSorted = [...offMealEntries].sort((a, b) =>
+            (a.email ?? "").localeCompare(b.email ?? "", undefined, { sensitivity: "base" })
+          );
+          populateList(offMealList, offMealSorted, "Everyone is on meal break.");
+          card.appendChild(offMealList);
 
           fragment.appendChild(card);
         });
@@ -1020,8 +1115,10 @@
             const seed = {
               email: user.email,
               fullName,
-              isOnBus: false,
+              isOnBreak: false,
+              isOnMealBreak: false,
               joinedAt: null,
+              mealJoinedAt: null,
               updatedAt: serverTimestamp(),
             };
             await setDoc(ref, seed);
@@ -1144,24 +1241,32 @@
         startRosterSubscription(groupId);
       }
 
-      async function updateBusStatus(targetState) {
+      async function updateBreakStatus(targetState) {
         if (!currentUser || !currentGroupId || isRosterMutating) {
           if (!currentGroupId) {
-            setRosterMessage("You need a group before toggling the bus.", true);
+            setRosterMessage("You need a group before updating break status.", true);
           }
+          return;
+        }
+        const currentEntry =
+          rosterEntries.find((entry) => entry.id === currentUser.uid) ?? selfEntry ?? {};
+        if (targetState && isOnMealBreakToday(currentEntry)) {
+          setRosterMessage("End your meal break first.", true);
           return;
         }
         isRosterMutating = true;
         updateActionButtons();
-        setRosterMessage(targetState ? "Joining the bus…" : "Leaving the bus…");
+        setRosterMessage(targetState ? "Starting your break…" : "Ending your break…");
 
         const fullName = getCurrentFullName() || currentUser.email;
         const optimisticEntry = {
           id: currentUser.uid,
           email: currentUser.email,
           fullName,
-          isOnBus: targetState,
+          isOnBreak: targetState,
           joinedAt: targetState ? new Date() : null,
+          isOnMealBreak: currentEntry.isOnMealBreak ?? false,
+          mealJoinedAt: currentEntry.mealJoinedAt ?? null,
         };
         const index = rosterEntries.findIndex((entry) => entry.id === currentUser.uid);
         if (index >= 0) {
@@ -1178,16 +1283,80 @@
             {
               email: currentUser.email,
               fullName,
-              isOnBus: targetState,
+              isOnBreak: targetState,
               joinedAt: targetState ? serverTimestamp() : null,
+              isOnMealBreak: optimisticEntry.isOnMealBreak ?? false,
+              mealJoinedAt: optimisticEntry.mealJoinedAt ?? null,
               updatedAt: serverTimestamp(),
             },
             { merge: true }
           );
-          setRosterMessage(targetState ? "You are on the bus." : "You left the bus.");
+          setRosterMessage(targetState ? "You are on break." : "You are back from break.");
         } catch (error) {
           console.error("Roster update failed", error);
           setRosterMessage("Update failed. Please try again.", true);
+        } finally {
+          isRosterMutating = false;
+          updateActionButtons();
+        }
+      }
+
+      async function updateMealBreakStatus(targetState) {
+        if (!currentUser || !currentGroupId || isRosterMutating) {
+          if (!currentGroupId) {
+            setRosterMessage("You need a group before updating meal break status.", true);
+          }
+          return;
+        }
+        const currentEntry =
+          rosterEntries.find((entry) => entry.id === currentUser.uid) ?? selfEntry ?? {};
+        if (targetState && isOnBreakToday(currentEntry)) {
+          setRosterMessage("End your regular break first.", true);
+          return;
+        }
+        isRosterMutating = true;
+        updateActionButtons();
+        setRosterMessage(targetState ? "Starting your meal break…" : "Ending your meal break…");
+
+        const fullName = getCurrentFullName() || currentUser.email;
+        const optimisticEntry = {
+          id: currentUser.uid,
+          email: currentUser.email,
+          fullName,
+          isOnBreak: currentEntry.isOnBreak ?? false,
+          joinedAt: currentEntry.joinedAt ?? null,
+          isOnMealBreak: targetState,
+          mealJoinedAt: targetState ? new Date() : null,
+        };
+        const index = rosterEntries.findIndex((entry) => entry.id === currentUser.uid);
+        if (index >= 0) {
+          rosterEntries[index] = { ...rosterEntries[index], ...optimisticEntry };
+        } else {
+          rosterEntries = [...rosterEntries, optimisticEntry];
+        }
+        selfEntry = optimisticEntry;
+        renderLists();
+
+        try {
+          await setDoc(
+            doc(db, "groups", currentGroupId, "busRoster", currentUser.uid),
+            {
+              email: currentUser.email,
+              fullName,
+              isOnBreak: optimisticEntry.isOnBreak ?? false,
+              joinedAt: optimisticEntry.joinedAt ?? null,
+              isOnMealBreak: targetState,
+              mealJoinedAt: targetState ? serverTimestamp() : null,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+          setRosterMessage(
+            targetState ? "You are on meal break." : "You are back from your meal break."
+          );
+        } catch (error) {
+          console.error("Meal break update failed", error);
+          setRosterMessage("Meal break update failed. Please try again.", true);
         } finally {
           isRosterMutating = false;
           updateActionButtons();
@@ -1270,8 +1439,10 @@
         }
       });
 
-      joinButton.addEventListener("click", () => updateBusStatus(true));
-      leaveButton.addEventListener("click", () => updateBusStatus(false));
+      joinButton.addEventListener("click", () => updateBreakStatus(true));
+      leaveButton.addEventListener("click", () => updateBreakStatus(false));
+      mealJoinButton.addEventListener("click", () => updateMealBreakStatus(true));
+      mealLeaveButton.addEventListener("click", () => updateMealBreakStatus(false));
 
       signOutButton.addEventListener("click", async () => {
         try {
@@ -1293,7 +1464,7 @@
         if (user) {
           userEmailEl.textContent = user.email;
           setRosterMessage("");
-          setGroupMessage(adminStatus ? "Admin overview" : "Looking up your group…");
+          setGroupMessage(adminStatus ? "Break overview" : "Looking up your group…");
           try {
             if (pendingIdentity && pendingIdentity.email === user.email) {
               await saveProfileFullName(user, pendingIdentity.fullName);
