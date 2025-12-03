@@ -324,6 +324,18 @@
         font-weight: 400;
       }
 
+      .duty-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.1rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--subtle);
+      }
+
       .time-badge {
         font-size: 0.8rem;
         font-weight: 500;
@@ -374,6 +386,55 @@
         height: 1px;
         width: 100%;
         background: var(--border);
+      }
+
+      .duty-section,
+      .break-section {
+        margin-top: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .duty-header,
+      .break-header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .duty-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .duty-select-label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--subtle);
+      }
+
+      .duty-select {
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        padding: 0.5rem 0.9rem;
+        font-size: 0.9rem;
+        min-width: 200px;
+      }
+
+      .break-controls {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
       }
 
       body.app-loading {
@@ -506,6 +567,60 @@
         </div>
         <p class="muted" id="roster-message"></p>
         <p class="muted" id="group-message"></p>
+
+        <section class="break-section" aria-label="Break status">
+          <div class="break-header">
+            <h2>Break status (today)</h2>
+          </div>
+          <div class="lists break-lists">
+            <div class="list-column">
+              <div class="list-header">
+                <h2>On break</h2>
+                <button id="break-leave-btn" class="ghost" type="button" disabled>
+                  End break
+                </button>
+              </div>
+              <ul class="status-list" id="break-on">
+                <li class="empty">Sign in to see who is on break.</li>
+              </ul>
+            </div>
+            <div class="list-column">
+              <div class="list-header">
+                <h2>Not on break</h2>
+                <button id="break-join-btn" type="button" disabled>Start break</button>
+              </div>
+              <ul class="status-list" id="break-off">
+                <li class="empty">Sign in to see who is not on break.</li>
+              </ul>
+            </div>
+          </div>
+          <p class="muted" id="break-message"></p>
+        </section>
+
+        <section class="duty-section" aria-label="Duty placements">
+          <div class="duty-header">
+            <h2>Duty placements (today)</h2>
+            <div class="duty-controls">
+              <label class="duty-select-label">
+                Your duty
+                <select id="duty-select" class="duty-select">
+                  <option value="">Not assigned</option>
+                  <option value="dis_hatlar">International Departures</option>
+                  <option value="ic_hatlar">Domestic Departures</option>
+                  <option value="e_pasaport_dis_hatlar">E-pasaport (dis hatlar)</option>
+                  <option value="e_pasaport_gelen_yolcu">E-pasaport (gelen yolcu)</option>
+                  <option value="uzak_ucus">Uzak ucus</option>
+                  <option value="valilik">Valilik</option>
+                </select>
+              </label>
+              <button id="duty-save" type="button" class="ghost">Update duty</button>
+            </div>
+          </div>
+          <div class="lists duty-lists" id="duty-lists">
+            <p class="muted">Sign in to see duty placements.</p>
+          </div>
+          <p class="muted" id="duty-message"></p>
+        </section>
       </section>
 
       <section class="card admin-panel hidden" id="admin-panel">
@@ -563,7 +678,16 @@
       const ADMIN_EMAILS = new Set([
         "furkan.ozturk@gmail.com",
       ]);
-      
+
+      const DUTY_PLACES = Object.freeze([
+        { id: "dis_hatlar", label: "International Departures" },
+        { id: "ic_hatlar", label: "Domestic Departures" },
+        { id: "e_pasaport_dis_hatlar", label: "E-pasaport (dis hatlar)" },
+        { id: "e_pasaport_gelen_yolcu", label: "E-pasaport (gelen yolcu)" },
+        { id: "uzak_ucus", label: "Uzak ucus" },
+        { id: "valilik", label: "Valilik" },
+      ]);
+
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
       const db = getFirestore(app);
@@ -587,6 +711,15 @@
       const leaveButton = document.getElementById("leave-btn");
       const onBusList = document.getElementById("on-bus");
       const offBusList = document.getElementById("off-bus");
+      const breakOnList = document.getElementById("break-on");
+      const breakOffList = document.getElementById("break-off");
+      const breakJoinButton = document.getElementById("break-join-btn");
+      const breakLeaveButton = document.getElementById("break-leave-btn");
+      const breakMessage = document.getElementById("break-message");
+      const dutyListsContainer = document.getElementById("duty-lists");
+      const dutyMessage = document.getElementById("duty-message");
+      const dutySelect = document.getElementById("duty-select");
+      const dutySaveButton = document.getElementById("duty-save");
       const userEmailEl = document.getElementById("user-email");
       const signOutButton = document.getElementById("sign-out");
       const adminPanel = document.getElementById("admin-panel");
@@ -605,6 +738,8 @@
       let selfEntry = null;
       let isRosterMutating = false;
       let isPasswordVisible = false;
+      let isBreakMutating = false;
+      let isDutyMutating = false;
       let isAdmin = false;
       const adminRosterData = new Map();
       const adminRosterUnsubscribes = new Map();
@@ -634,6 +769,18 @@
         if (!groupMessage) return;
         groupMessage.textContent = message;
         groupMessage.classList.toggle("error", isError);
+      }
+
+      function setBreakMessage(message = "", isError = false) {
+        if (!breakMessage) return;
+        breakMessage.textContent = message;
+        breakMessage.classList.toggle("error", isError);
+      }
+
+      function setDutyMessage(message = "", isError = false) {
+        if (!dutyMessage) return;
+        dutyMessage.textContent = message;
+        dutyMessage.classList.toggle("error", isError);
       }
 
       function isAdminAccount(user) {
@@ -830,10 +977,29 @@
         return dateKeyFor(entry.joinedAt) === currentResetDateKey();
       }
 
+      function isOnDutyToday(entry) {
+        if (!entry || !entry.dutyPlacement || !entry.dutyAssignedAt) return false;
+        return dateKeyFor(entry.dutyAssignedAt) === currentResetDateKey();
+      }
+
+      function isOnBreakToday(entry) {
+        if (!entry || !entry.isOnBreak || !entry.breakJoinedAt) return false;
+        return dateKeyFor(entry.breakJoinedAt) === currentResetDateKey();
+      }
+
+      function dutyLabelFor(entry) {
+        const id = entry?.dutyPlacement;
+        if (!id) return "Not assigned";
+        const found = DUTY_PLACES.find((place) => place.id === id);
+        return found ? found.label : id;
+      }
+
       function updateActionButtons() {
         if (!currentUser || !currentGroupId) {
           joinButton.disabled = true;
           leaveButton.disabled = true;
+          if (breakJoinButton) breakJoinButton.disabled = true;
+          if (breakLeaveButton) breakLeaveButton.disabled = true;
           return;
         }
         const entry =
@@ -841,6 +1007,16 @@
         const isOnBus = isOnBusToday(entry);
         joinButton.disabled = isRosterMutating || isOnBus;
         leaveButton.disabled = isRosterMutating || !isOnBus;
+
+        const onBreak = isOnBreakToday(entry);
+        if (breakJoinButton) {
+          breakJoinButton.disabled =
+            isBreakMutating || !isOnBus || onBreak;
+        }
+        if (breakLeaveButton) {
+          breakLeaveButton.disabled =
+            isBreakMutating || !isOnBus || !onBreak;
+        }
       }
 
       function createListItem(entry, { showJoinedAt = false } = {}) {
@@ -866,6 +1042,34 @@
         return li;
       }
 
+      function createBreakListItem(entry, { showTime = true } = {}) {
+        const li = document.createElement("li");
+
+        const person = document.createElement("span");
+        person.className = "person";
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "person-name";
+        nameSpan.textContent = entry.fullName ?? entry.email ?? "Unknown staff";
+        person.appendChild(nameSpan);
+
+        const duty = document.createElement("span");
+        duty.className = "duty-tag";
+        duty.textContent = dutyLabelFor(entry);
+        person.appendChild(duty);
+
+        li.appendChild(person);
+
+        if (showTime && entry.breakJoinedAt) {
+          const timeSpan = document.createElement("span");
+          timeSpan.className = "time-badge";
+          timeSpan.textContent = formatTime(entry.breakJoinedAt);
+          li.appendChild(timeSpan);
+        }
+
+        return li;
+      }
+
       function populateList(target, entries, emptyText, options = {}) {
         if (!entries.length) {
           target.innerHTML = `<li class="empty">${emptyText}</li>`;
@@ -883,6 +1087,14 @@
           onBusList.innerHTML = '<li class="empty">Sign in to see the roster.</li>';
           offBusList.innerHTML = '<li class="empty">Sign in to see the roster.</li>';
           updateActionButtons();
+          if (breakOnList) {
+            breakOnList.innerHTML =
+              '<li class="empty">Sign in to see who is on break.</li>';
+          }
+          if (breakOffList) {
+            breakOffList.innerHTML =
+              '<li class="empty">Sign in to see who is not on break.</li>';
+          }
           return;
         }
 
@@ -891,6 +1103,12 @@
           onBusList.innerHTML = `<li class="empty">${awaiting}</li>`;
           offBusList.innerHTML = `<li class="empty">${awaiting}</li>`;
           updateActionButtons();
+          if (breakOnList) {
+            breakOnList.innerHTML = `<li class="empty">${awaiting}</li>`;
+          }
+          if (breakOffList) {
+            breakOffList.innerHTML = `<li class="empty">${awaiting}</li>`;
+          }
           return;
         }
 
@@ -909,6 +1127,180 @@
         });
         populateList(offBusList, offBusSorted, "Everyone is already on board.");
         updateActionButtons();
+        renderBreakLists();
+        renderDutyLists();
+      }
+
+      function renderBreakLists() {
+        if (!breakOnList || !breakOffList) return;
+
+        if (!currentUser) {
+          breakOnList.innerHTML =
+            '<li class="empty">Sign in to see who is on break.</li>';
+          breakOffList.innerHTML =
+            '<li class="empty">Sign in to see who is not on break.</li>';
+          return;
+        }
+
+        if (!currentGroupId) {
+          const awaiting = "Waiting for a group assignment.";
+          breakOnList.innerHTML = `<li class="empty">${awaiting}</li>`;
+          breakOffList.innerHTML = `<li class="empty">${awaiting}</li>`;
+          return;
+        }
+
+        const onBreakEntries = rosterEntries.filter(
+          (entry) => isOnBusToday(entry) && isOnBreakToday(entry)
+        );
+        const offBreakEntries = rosterEntries.filter(
+          (entry) => isOnBusToday(entry) && !isOnBreakToday(entry)
+        );
+
+        const onSorted = [...onBreakEntries].sort(
+          (a, b) => getTimestampValue(a.breakJoinedAt) - getTimestampValue(b.breakJoinedAt)
+        );
+        const offSorted = [...offBreakEntries].sort((a, b) =>
+          (a.fullName ?? a.email ?? "").localeCompare(
+            b.fullName ?? b.email ?? "",
+            undefined,
+            { sensitivity: "base" }
+          )
+        );
+
+        if (!onSorted.length) {
+          breakOnList.innerHTML =
+            '<li class="empty">Nobody is on break right now.</li>';
+        } else {
+          const fragment = document.createDocumentFragment();
+          onSorted.forEach((entry) => {
+            fragment.appendChild(createBreakListItem(entry, { showTime: true }));
+          });
+          breakOnList.replaceChildren(fragment);
+        }
+
+        if (!offSorted.length) {
+          breakOffList.innerHTML =
+            '<li class="empty">Nobody is waiting to go on break.</li>';
+        } else {
+          const fragment = document.createDocumentFragment();
+          offSorted.forEach((entry) => {
+            fragment.appendChild(createBreakListItem(entry, { showTime: false }));
+          });
+          breakOffList.replaceChildren(fragment);
+        }
+
+        updateActionButtons();
+      }
+
+      function renderDutyLists() {
+        if (!dutyListsContainer) return;
+
+        if (!currentUser) {
+          dutyListsContainer.innerHTML =
+            '<p class="muted">Sign in to see duty placements.</p>';
+          if (dutySelect) {
+            dutySelect.value = "";
+            dutySelect.disabled = true;
+          }
+          if (dutySaveButton) {
+            dutySaveButton.disabled = true;
+          }
+          return;
+        }
+
+        if (!currentGroupId) {
+          dutyListsContainer.innerHTML =
+            '<p class="muted">Waiting for a group assignment.</p>';
+          if (dutySelect) {
+            dutySelect.value = "";
+            dutySelect.disabled = true;
+          }
+          if (dutySaveButton) {
+            dutySaveButton.disabled = true;
+          }
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        const dutyBuckets = new Map();
+        DUTY_PLACES.forEach((place) => {
+          dutyBuckets.set(place.id, []);
+        });
+
+        const unassignedEntries = [];
+
+        rosterEntries.forEach((entry) => {
+          if (!entry || !isOnBusToday(entry)) return;
+          const dutyId = entry.dutyPlacement;
+          const isToday = dutyId && isOnDutyToday(entry) && dutyBuckets.has(dutyId);
+          if (isToday) {
+            dutyBuckets.get(dutyId).push(entry);
+          } else {
+            unassignedEntries.push(entry);
+          }
+        });
+
+        DUTY_PLACES.forEach((place) => {
+          const column = document.createElement("div");
+          column.className = "list-column";
+
+          const header = document.createElement("div");
+          header.className = "list-header";
+
+          const title = document.createElement("h2");
+          title.textContent = place.label;
+          header.appendChild(title);
+          column.appendChild(header);
+
+          const list = document.createElement("ul");
+          list.className = "status-list";
+
+          const entries = dutyBuckets.get(place.id) ?? [];
+          const sorted = [...entries].sort((a, b) =>
+            (a.fullName ?? a.email ?? "").localeCompare(
+              b.fullName ?? b.email ?? "",
+              undefined,
+              { sensitivity: "base" }
+            )
+          );
+
+          populateList(list, sorted, `Nobody assigned to ${place.label} today.`);
+          column.appendChild(list);
+          fragment.appendChild(column);
+        });
+
+        const unassignedColumn = document.createElement("div");
+        unassignedColumn.className = "list-column";
+
+        const unassignedHeader = document.createElement("div");
+        unassignedHeader.className = "list-header";
+
+        const unassignedTitle = document.createElement("h2");
+        unassignedTitle.textContent = "Not assigned";
+        unassignedHeader.appendChild(unassignedTitle);
+        unassignedColumn.appendChild(unassignedHeader);
+
+        const unassignedList = document.createElement("ul");
+        unassignedList.className = "status-list";
+
+        const unassignedSorted = [...unassignedEntries].sort((a, b) =>
+          (a.fullName ?? a.email ?? "").localeCompare(
+            b.fullName ?? b.email ?? "",
+            undefined,
+            { sensitivity: "base" }
+          )
+        );
+
+        populateList(
+          unassignedList,
+          unassignedSorted,
+          "Everyone has a duty today."
+        );
+        unassignedColumn.appendChild(unassignedList);
+        fragment.appendChild(unassignedColumn);
+
+        dutyListsContainer.replaceChildren(fragment);
+        syncDutyControls();
       }
 
       function renderAdminPanel() {
@@ -1144,6 +1536,31 @@
         startRosterSubscription(groupId);
       }
 
+      function syncDutyControls() {
+        if (!dutySelect) return;
+
+        if (!currentUser || !currentGroupId) {
+          dutySelect.value = "";
+          dutySelect.disabled = true;
+          if (dutySaveButton) {
+            dutySaveButton.disabled = true;
+          }
+          return;
+        }
+
+        const entry =
+          rosterEntries.find((record) => record.id === currentUser.uid) ?? selfEntry;
+        const dutyId =
+          entry && isOnDutyToday(entry) && entry.dutyPlacement ? entry.dutyPlacement : "";
+
+        dutySelect.value = dutyId;
+        const onBus = entry && isOnBusToday(entry);
+        dutySelect.disabled = !onBus;
+        if (dutySaveButton) {
+          dutySaveButton.disabled = !onBus || isDutyMutating;
+        }
+      }
+
       async function updateBusStatus(targetState) {
         if (!currentUser || !currentGroupId || isRosterMutating) {
           if (!currentGroupId) {
@@ -1163,6 +1580,10 @@
           isOnBus: targetState,
           joinedAt: targetState ? new Date() : null,
         };
+        if (!targetState) {
+          optimisticEntry.isOnBreak = false;
+          optimisticEntry.breakJoinedAt = null;
+        }
         const index = rosterEntries.findIndex((entry) => entry.id === currentUser.uid);
         if (index >= 0) {
           rosterEntries[index] = { ...rosterEntries[index], ...optimisticEntry };
@@ -1173,15 +1594,21 @@
         renderLists();
 
         try {
+          const payload = {
+            email: currentUser.email,
+            fullName,
+            isOnBus: targetState,
+            joinedAt: targetState ? serverTimestamp() : null,
+            updatedAt: serverTimestamp(),
+          };
+          if (!targetState) {
+            payload.isOnBreak = false;
+            payload.breakJoinedAt = null;
+          }
+
           await setDoc(
             doc(db, "groups", currentGroupId, "busRoster", currentUser.uid),
-            {
-              email: currentUser.email,
-              fullName,
-              isOnBus: targetState,
-              joinedAt: targetState ? serverTimestamp() : null,
-              updatedAt: serverTimestamp(),
-            },
+            payload,
             { merge: true }
           );
           setRosterMessage(targetState ? "You are on the bus." : "You left the bus.");
@@ -1191,6 +1618,138 @@
         } finally {
           isRosterMutating = false;
           updateActionButtons();
+        }
+      }
+
+      async function updateBreakStatus(targetState) {
+        if (!currentUser || !currentGroupId || isBreakMutating) {
+          if (!currentGroupId) {
+            setBreakMessage("You need a group before starting a break.", true);
+          }
+          return;
+        }
+
+        const entry =
+          rosterEntries.find((record) => record.id === currentUser.uid) ?? selfEntry;
+        if (!isOnBusToday(entry)) {
+          setBreakMessage("You must be on the bus to start a break.", true);
+          return;
+        }
+
+        isBreakMutating = true;
+        updateActionButtons();
+        setBreakMessage(targetState ? "Starting break…" : "Ending break…");
+
+        const fullName = getCurrentFullName() || currentUser.email;
+        const optimisticEntry = {
+          id: currentUser.uid,
+          email: currentUser.email,
+          fullName,
+          ...entry,
+          isOnBreak: targetState,
+          breakJoinedAt: targetState ? new Date() : null,
+        };
+
+        const index = rosterEntries.findIndex((item) => item.id === currentUser.uid);
+        if (index >= 0) {
+          rosterEntries[index] = { ...rosterEntries[index], ...optimisticEntry };
+        } else {
+          rosterEntries = [...rosterEntries, optimisticEntry];
+        }
+        selfEntry = optimisticEntry;
+        renderBreakLists();
+
+        try {
+          await setDoc(
+            doc(db, "groups", currentGroupId, "busRoster", currentUser.uid),
+            {
+              email: currentUser.email,
+              fullName,
+              isOnBreak: targetState,
+              breakJoinedAt: targetState ? serverTimestamp() : null,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+          setBreakMessage(
+            targetState ? "You are on break." : "You are back from break."
+          );
+        } catch (error) {
+          console.error("Break update failed", error);
+          setBreakMessage("Unable to update break status. Please try again.", true);
+        } finally {
+          isBreakMutating = false;
+          updateActionButtons();
+        }
+      }
+
+      async function updateDutyPlacement(targetDutyId) {
+        if (!currentUser || !currentGroupId || isDutyMutating) {
+          if (!currentGroupId) {
+            setDutyMessage("You need a group before setting duty.", true);
+          }
+          return;
+        }
+
+        const entry =
+          rosterEntries.find((record) => record.id === currentUser.uid) ?? selfEntry;
+        if (!isOnBusToday(entry)) {
+          setDutyMessage("You must be on the bus to set duty.", true);
+          return;
+        }
+
+        isDutyMutating = true;
+        syncDutyControls();
+        setDutyMessage("Updating duty…");
+
+        const fullName = getCurrentFullName() || currentUser.email;
+        const ref = doc(db, "groups", currentGroupId, "busRoster", currentUser.uid);
+
+        const payload = {
+          email: currentUser.email,
+          fullName,
+          updatedAt: serverTimestamp(),
+        };
+
+        if (!targetDutyId) {
+          payload.dutyPlacement = null;
+          payload.dutyAssignedAt = null;
+        } else {
+          payload.dutyPlacement = targetDutyId;
+          payload.dutyAssignedAt = serverTimestamp();
+        }
+
+        try {
+          await setDoc(ref, payload, { merge: true });
+
+          const existing =
+            rosterEntries.find((entry) => entry.id === currentUser.uid) ?? selfEntry;
+
+          const updatedEntry = {
+            id: currentUser.uid,
+            email: currentUser.email,
+            fullName,
+            ...existing,
+            dutyPlacement: targetDutyId || null,
+            dutyAssignedAt: targetDutyId ? new Date() : null,
+          };
+
+          selfEntry = updatedEntry;
+          const index = rosterEntries.findIndex((entry) => entry.id === currentUser.uid);
+          if (index >= 0) {
+            rosterEntries[index] = updatedEntry;
+          } else {
+            rosterEntries = [...rosterEntries, updatedEntry];
+          }
+
+          renderDutyLists();
+          setDutyMessage("Duty updated.");
+        } catch (error) {
+          console.error("Duty update failed", error);
+          setDutyMessage("Unable to update duty. Please try again.", true);
+        } finally {
+          isDutyMutating = false;
+          syncDutyControls();
         }
       }
 
@@ -1215,6 +1774,25 @@
         passwordToggleButton.addEventListener("click", () => {
           setPasswordVisibility(!isPasswordVisible);
           passwordInput?.focus();
+        });
+      }
+
+      if (dutySaveButton && dutySelect) {
+        dutySaveButton.addEventListener("click", () => {
+          const selected = dutySelect.value || "";
+          updateDutyPlacement(selected);
+        });
+      }
+
+      if (breakJoinButton) {
+        breakJoinButton.addEventListener("click", () => {
+          updateBreakStatus(true);
+        });
+      }
+
+      if (breakLeaveButton) {
+        breakLeaveButton.addEventListener("click", () => {
+          updateBreakStatus(false);
         });
       }
 
