@@ -34,6 +34,18 @@
         box-sizing: border-box;
       }
 
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
       body {
         font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
         margin: 0;
@@ -133,6 +145,21 @@
         outline-offset: 2px;
       }
 
+      select {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        font-size: 1rem;
+        background: var(--surface);
+        color: var(--text);
+        min-width: 220px;
+      }
+
+      select:focus-visible {
+        outline: 2px solid var(--text);
+        outline-offset: 2px;
+      }
+
       .form-actions {
         display: flex;
         flex-wrap: wrap;
@@ -155,6 +182,16 @@
         background: transparent;
         color: var(--text);
         border: 1px solid var(--border);
+      }
+
+      button.confirm {
+        background: #b3261e;
+        color: #ffffff;
+        border-color: #b3261e;
+      }
+
+      button.ghost.confirm {
+        border-color: #b3261e;
       }
 
       button:disabled {
@@ -236,6 +273,38 @@
         justify-content: space-between;
         align-items: center;
         gap: 1rem;
+      }
+
+      .role-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1rem;
+        background: var(--surface);
+      }
+
+      .role-meta {
+        flex: 1 1 200px;
+        min-width: 200px;
+      }
+
+      .role-current {
+        margin: 0.25rem 0 0.15rem;
+        font-weight: 600;
+      }
+
+      .role-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        align-items: center;
+      }
+
+      .role-actions button {
+        white-space: nowrap;
       }
 
 
@@ -325,6 +394,12 @@
         font-weight: 400;
       }
 
+      .person-role {
+        font-size: 0.85rem;
+        color: var(--subtle);
+        font-weight: 500;
+      }
+
       .time-badge {
         font-size: 0.8rem;
         font-weight: 500;
@@ -403,6 +478,95 @@
         background: var(--border);
       }
 
+      .admin-logs {
+        margin-top: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .logs-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .logs-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .log-group-select {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .log-option {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 999px;
+        padding: 0.35rem 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .log-option input {
+        margin: 0;
+      }
+
+      .log-table {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+      }
+
+      .log-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem;
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .log-card table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .log-card th,
+      .log-card td {
+        text-align: left;
+        padding: 0.45rem 0.25rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .log-card th {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--subtle);
+      }
+
+      .log-card tr:last-child td {
+        border-bottom: none;
+      }
+
+      .log-empty {
+        color: var(--subtle);
+        margin: 0.25rem 0;
+        font-size: 0.95rem;
+      }
+
       body.app-loading {
         position: relative;
       }
@@ -435,6 +599,10 @@
         .user-row {
           flex-direction: column;
           align-items: flex-start;
+        }
+
+        .role-actions {
+          width: 100%;
         }
       }
     </style>
@@ -509,6 +677,21 @@
           <button class="ghost" id="sign-out">Sign Out</button>
         </div>
 
+        <div class="role-row" id="role-row">
+          <div class="role-meta">
+            <p class="eyebrow">Role</p>
+            <p class="role-current" id="role-current">No role selected</p>
+            <p class="muted" id="role-message"></p>
+          </div>
+          <div class="role-actions">
+            <label class="sr-only" for="role-select">Choose your role</label>
+            <select id="role-select">
+              <option value="">Choose a role…</option>
+            </select>
+            <button type="button" id="role-save">Update role</button>
+          </div>
+        </div>
+
         <div class="lists">
           <div class="list-column">
             <div class="list-header">
@@ -554,15 +737,37 @@
       </section>
 
       <section class="card admin-panel hidden" id="admin-panel">
-	        <div class="user-row">
-	          <div>
-	            <p class="eyebrow">Staff view</p>
+        <div class="user-row">
+          <div>
+            <p class="eyebrow">Staff view</p>
             <p class="user-email" id="admin-user-email">—</p>
           </div>
           <button class="ghost" id="admin-sign-out">Sign Out</button>
         </div>
         <div class="admin-groups" id="admin-groups">
           <p class="muted">Loading group data…</p>
+        </div>
+        <div class="admin-logs" id="admin-logs">
+          <div class="logs-header">
+            <div>
+              <p class="eyebrow">Break logs</p>
+              <p class="muted" id="logs-message">
+                Track how many breaks and total time spent on break per worker.
+              </p>
+            </div>
+            <div class="logs-actions">
+              <div class="log-group-select" id="log-group-select" aria-label="Select groups to reset">
+                <p class="muted">Loading groups…</p>
+              </div>
+              <button class="ghost" type="button" id="reset-selected-logs" disabled>
+                Reset selected groups
+              </button>
+              <button type="button" id="reset-all-logs">Reset all</button>
+            </div>
+          </div>
+          <div class="log-table" id="log-table">
+            <p class="muted">Loading logs…</p>
+          </div>
         </div>
       </section>
     </main>
@@ -605,6 +810,15 @@
         D: "D",
       });
 
+      const ROLE_OPTIONS = Object.freeze([
+        { id: "international-departures", label: "International Departures" },
+        { id: "domestic-departures", label: "Domestic Departures" },
+        { id: "management-office", label: "Management Office" },
+        { id: "e-passport", label: "E-passport" },
+        { id: "e-passport-arrivals", label: "E-passport (Arrivals)" },
+        { id: "uzak-ucus", label: "Uzak Ucus" },
+      ]);
+
       const ADMIN_EMAILS = new Set([
         "furkan.ozturk@gmail.com",
       ]);
@@ -641,6 +855,16 @@
       const adminGroupsContainer = document.getElementById("admin-groups");
       const adminUserEmail = document.getElementById("admin-user-email");
       const adminSignOutButton = document.getElementById("admin-sign-out");
+      const roleSelect = document.getElementById("role-select");
+      const roleSaveButton = document.getElementById("role-save");
+      const roleCurrent = document.getElementById("role-current");
+      const roleMessage = document.getElementById("role-message");
+      const adminLogsSection = document.getElementById("admin-logs");
+      const logTable = document.getElementById("log-table");
+      const logsMessage = document.getElementById("logs-message");
+      const logGroupSelect = document.getElementById("log-group-select");
+      const resetSelectedLogsButton = document.getElementById("reset-selected-logs");
+      const resetAllLogsButton = document.getElementById("reset-all-logs");
 
       let authMode = "signin";
       let currentUser = null;
@@ -652,11 +876,19 @@
       let groupUnsubscribe = null;
       let selfEntry = null;
       let isRosterMutating = false;
+      let isRoleUpdating = false;
       let isPasswordVisible = false;
       let isAdmin = false;
       const adminRosterData = new Map();
       const adminRosterUnsubscribes = new Map();
       const minimizedAdminGroups = new Set();
+      const ADMIN_LAYOUT_STORAGE_PREFIX = "adminGroupLayout";
+      const selectedLogGroups = new Set();
+      let isResettingLogs = false;
+      let logRefreshTimer = null;
+      const LOG_REFRESH_INTERVAL_MS = 60_000;
+      const RESET_CONFIRM_TIMEOUT_MS = 6_000;
+      const resetConfirmTimers = new Map();
 
       function toggleViews(isSignedIn) {
         if (isSignedIn) {
@@ -685,6 +917,51 @@
         groupMessage.classList.toggle("error", isError);
       }
 
+      function setRoleMessage(message = "", isError = false) {
+        if (!roleMessage) return;
+        roleMessage.textContent = message;
+        roleMessage.classList.toggle("error", isError);
+      }
+
+      function setLogMessage(message = "", isError = false) {
+        if (!logsMessage) return;
+        logsMessage.textContent =
+          message || "Track how many breaks and total time spent on break per worker.";
+        logsMessage.classList.toggle("error", isError);
+      }
+
+      function clearResetConfirmation(button) {
+        if (!button) return;
+        const timer = resetConfirmTimers.get(button);
+        if (timer) {
+          clearTimeout(timer);
+          resetConfirmTimers.delete(button);
+        }
+        button.classList.remove("confirm");
+        if (button.dataset.defaultLabel) {
+          button.textContent = button.dataset.defaultLabel;
+        }
+        button.dataset.confirm = "false";
+      }
+
+      function requestResetConfirmation(button, confirmText) {
+        if (!button) return false;
+        const otherButton =
+          button === resetAllLogsButton ? resetSelectedLogsButton : resetAllLogsButton;
+        clearResetConfirmation(otherButton);
+        if (button.dataset.confirm === "true") {
+          clearResetConfirmation(button);
+          return true;
+        }
+        button.dataset.confirm = "true";
+        button.dataset.defaultLabel = button.dataset.defaultLabel || button.textContent;
+        button.textContent = confirmText;
+        button.classList.add("confirm");
+        const timer = setTimeout(() => clearResetConfirmation(button), RESET_CONFIRM_TIMEOUT_MS);
+        resetConfirmTimers.set(button, timer);
+        return false;
+      }
+
       function isAdminAccount(user) {
         const email = typeof user === "string" ? user : user?.email;
         return Boolean(email && ADMIN_EMAILS.has(String(email).toLowerCase()));
@@ -695,16 +972,31 @@
         if (adminPanel) {
           adminPanel.classList.toggle("hidden", !isAdmin);
         }
+        if (adminLogsSection) {
+          adminLogsSection.classList.toggle("hidden", !isAdmin);
+        }
         if (isAdmin && adminUserEmail && currentUser) {
           adminUserEmail.textContent = currentUser.email;
         }
         if (!isAdmin) {
           stopAdminRosterWatchers();
+          stopLogTicker();
           if (adminGroupsContainer) {
             adminGroupsContainer.innerHTML = "";
           }
+          if (logTable) {
+            logTable.innerHTML = "";
+          }
+          selectedLogGroups.clear();
+          renderLogGroupSelector();
+          setLogMessage("");
         } else {
+          loadAdminLayout();
           renderAdminPanel();
+          renderLogGroupSelector();
+          renderStaffLogs();
+          setLogMessage("");
+          startLogTicker();
         }
       }
 
@@ -738,6 +1030,77 @@
 
       function isValidGroupId(groupId) {
         return Boolean(groupId && GROUPS[groupId]);
+      }
+
+      function adminLayoutStorageKey(user = currentUser) {
+        const email = user?.email ? String(user.email).toLowerCase() : "default";
+        return `${ADMIN_LAYOUT_STORAGE_PREFIX}:${email}`;
+      }
+
+      function saveAdminLayout(user = currentUser) {
+        try {
+          localStorage.setItem(adminLayoutStorageKey(user), JSON.stringify([...minimizedAdminGroups]));
+        } catch {
+          /* ignore storage issues */
+        }
+      }
+
+      function loadAdminLayout(user = currentUser) {
+        try {
+          const stored = localStorage.getItem(adminLayoutStorageKey(user));
+          if (!stored) return;
+          const parsed = JSON.parse(stored);
+          if (!Array.isArray(parsed)) return;
+          minimizedAdminGroups.clear();
+          parsed.forEach((groupId) => {
+            if (isValidGroupId(groupId)) {
+              minimizedAdminGroups.add(groupId);
+            }
+          });
+        } catch {
+          /* ignore storage issues */
+        }
+      }
+
+      function roleLabel(roleId) {
+        const match = ROLE_OPTIONS.find((role) => role.id === roleId);
+        return match ? match.label : "";
+      }
+
+      function sanitizeRoleId(roleId) {
+        return ROLE_OPTIONS.some((role) => role.id === roleId) ? roleId : "";
+      }
+
+      function populateRoleSelect() {
+        if (!roleSelect) return;
+        const current = roleSelect.value;
+        roleSelect.innerHTML = '<option value="">Choose a role…</option>';
+        ROLE_OPTIONS.forEach((role) => {
+          const option = document.createElement("option");
+          option.value = role.id;
+          option.textContent = role.label;
+          roleSelect.appendChild(option);
+        });
+        if (current && sanitizeRoleId(current)) {
+          roleSelect.value = current;
+        }
+      }
+
+      function setRoleControlsDisabled(disabled) {
+        if (roleSelect) roleSelect.disabled = disabled;
+        if (roleSaveButton) roleSaveButton.disabled = disabled;
+      }
+
+      function syncRoleUI(entry = selfEntry) {
+        const roleId = sanitizeRoleId(entry?.role);
+        if (roleSelect) {
+          roleSelect.value = roleId;
+        }
+        if (roleCurrent) {
+          const label = roleLabel(roleId);
+          roleCurrent.textContent = label || "No role selected";
+        }
+        setRoleControlsDisabled(!currentUser || !currentGroupId || isRoleUpdating);
       }
 
       function groupLabel(groupId) {
@@ -839,6 +1202,42 @@
         }
       }
 
+      function formatDuration(ms) {
+        const safeMs = Number.isFinite(ms) ? ms : 0;
+        if (safeMs <= 0) return "0m";
+        const totalMinutes = Math.round(safeMs / 60000);
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        if (hours && minutes) return `${hours}h ${minutes}m`;
+        if (hours) return `${hours}h`;
+        return `${minutes}m`;
+      }
+
+      function normalizeBreakStats(entry) {
+        const breakCount = Number.isFinite(entry?.breakCount) ? entry.breakCount : 0;
+        const breakDurationMs = Number.isFinite(entry?.breakDurationMs)
+          ? Math.max(0, entry.breakDurationMs)
+          : 0;
+        const logDateKey = typeof entry?.logDateKey === "string" ? entry.logDateKey : "";
+        return { breakCount, breakDurationMs, logDateKey };
+      }
+
+      function getBreakStatsForToday(entry) {
+        const today = currentResetDateKey();
+        const { breakCount, breakDurationMs, logDateKey } = normalizeBreakStats(entry);
+        if (logDateKey !== today) {
+          return { breakCount: 0, breakDurationMs: 0, logDateKey: today, reset: true };
+        }
+        return { breakCount, breakDurationMs, logDateKey: today, reset: false };
+      }
+
+      function currentBreakElapsed(entry) {
+        if (!entry?.isOnBreak || !isOnBreakToday(entry)) return 0;
+        const joinedAtDate = toDate(entry.joinedAt);
+        if (!joinedAtDate) return 0;
+        return Math.max(0, Date.now() - joinedAtDate.getTime());
+      }
+
       function currentResetDateKey() {
         try {
           const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -896,10 +1295,11 @@
         }
         const entry =
           rosterEntries.find((record) => record.id === currentUser.uid) ?? selfEntry;
+        const hasRole = Boolean(sanitizeRoleId(entry?.role));
         const isOnBreak = isOnBreakToday(entry);
         const isOnMealBreak = isOnMealBreakToday(entry);
-        const disableBreakJoin = isRosterMutating || isOnBreak || isOnMealBreak;
-        const disableMealJoin = isRosterMutating || isOnMealBreak || isOnBreak;
+        const disableBreakJoin = isRosterMutating || isOnBreak || isOnMealBreak || !hasRole;
+        const disableMealJoin = isRosterMutating || isOnMealBreak || isOnBreak || !hasRole;
         if (joinButton) joinButton.disabled = disableBreakJoin;
         if (leaveButton) leaveButton.disabled = isRosterMutating || !isOnBreak;
         if (mealJoinButton) mealJoinButton.disabled = disableMealJoin;
@@ -916,6 +1316,12 @@
         nameSpan.className = "person-name";
         nameSpan.textContent = entry.fullName ?? entry.email ?? "Unknown worker";
         person.appendChild(nameSpan);
+
+        const roleText = roleLabel(entry.role);
+        const roleSpan = document.createElement("span");
+        roleSpan.className = "person-role";
+        roleSpan.textContent = roleText || "Role not set";
+        person.appendChild(roleSpan);
 
         li.appendChild(person);
 
@@ -942,6 +1348,19 @@
         target.replaceChildren(fragment);
       }
 
+      function normalizeRosterDocument(docSnap) {
+        const data = docSnap.data();
+        const stats = getBreakStatsForToday(data);
+        return {
+          id: docSnap.id,
+          ...data,
+          role: sanitizeRoleId(data.role),
+          breakCount: stats.breakCount,
+          breakDurationMs: stats.breakDurationMs,
+          logDateKey: stats.logDateKey,
+        };
+      }
+
       function renderLists() {
         if (!currentUser) {
           onBreakList.innerHTML = '<li class="empty">Sign in to see the break list.</li>';
@@ -949,6 +1368,7 @@
           onMealBreakList.innerHTML = '<li class="empty">Sign in to see the meal break list.</li>';
           offMealBreakList.innerHTML = '<li class="empty">Sign in to see the meal break list.</li>';
           updateActionButtons();
+          syncRoleUI();
           return;
         }
 
@@ -959,6 +1379,7 @@
           onMealBreakList.innerHTML = `<li class="empty">${awaiting}</li>`;
           offMealBreakList.innerHTML = `<li class="empty">${awaiting}</li>`;
           updateActionButtons();
+          syncRoleUI();
           return;
         }
 
@@ -990,6 +1411,7 @@
         });
         populateList(offMealBreakList, offMealBreakSorted, "Everyone is on meal break.");
         updateActionButtons();
+        syncRoleUI();
       }
 
       function renderAdminPanel() {
@@ -1131,6 +1553,200 @@
         });
 
         adminGroupsContainer.replaceChildren(fragment);
+        saveAdminLayout();
+        renderStaffLogs();
+      }
+
+      function syncLogResetButtons() {
+        if (resetSelectedLogsButton) {
+          const disabled = !isAdmin || isResettingLogs || selectedLogGroups.size === 0;
+          resetSelectedLogsButton.disabled = disabled;
+          if (disabled) {
+            clearResetConfirmation(resetSelectedLogsButton);
+          }
+        }
+        if (resetAllLogsButton) {
+          const disabled = !isAdmin || isResettingLogs;
+          resetAllLogsButton.disabled = disabled;
+          if (disabled) {
+            clearResetConfirmation(resetAllLogsButton);
+          }
+        }
+      }
+
+      function renderLogGroupSelector() {
+        if (!logGroupSelect) return;
+        const groupIds = Object.keys(GROUPS);
+        if (!groupIds.length) {
+          logGroupSelect.innerHTML = '<p class="muted">No groups configured.</p>';
+          syncLogResetButtons();
+          return;
+        }
+        [...selectedLogGroups].forEach((groupId) => {
+          if (!isValidGroupId(groupId)) {
+            selectedLogGroups.delete(groupId);
+          }
+        });
+        const fragment = document.createDocumentFragment();
+        groupIds.forEach((groupId) => {
+          const labelEl = document.createElement("label");
+          labelEl.className = "log-option";
+
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.value = groupId;
+          input.checked = selectedLogGroups.has(groupId);
+          input.addEventListener("change", () => {
+            if (input.checked) {
+              selectedLogGroups.add(groupId);
+            } else {
+              selectedLogGroups.delete(groupId);
+            }
+            syncLogResetButtons();
+          });
+          labelEl.appendChild(input);
+
+          const text = document.createElement("span");
+          text.textContent = `Group ${groupLabel(groupId)}`;
+          labelEl.appendChild(text);
+          fragment.appendChild(labelEl);
+        });
+        logGroupSelect.replaceChildren(fragment);
+        syncLogResetButtons();
+      }
+
+      function renderStaffLogs() {
+        if (!logTable) return;
+        if (!isAdmin) {
+          logTable.innerHTML = "";
+          return;
+        }
+        const groupIds = Object.keys(GROUPS);
+        if (!groupIds.length) {
+          logTable.innerHTML = '<p class="muted">No groups configured.</p>';
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        groupIds.forEach((groupId) => {
+          const roster = adminRosterData.get(groupId) ?? [];
+          const card = document.createElement("div");
+          card.className = "log-card";
+
+          const title = document.createElement("h3");
+          title.textContent = `Group ${groupLabel(groupId)}`;
+          card.appendChild(title);
+
+          if (!roster.length) {
+            const empty = document.createElement("p");
+            empty.className = "log-empty";
+            empty.textContent = "No staff yet.";
+            card.appendChild(empty);
+            fragment.appendChild(card);
+            return;
+          }
+
+          const table = document.createElement("table");
+          const thead = document.createElement("thead");
+          thead.innerHTML =
+            "<tr><th>Worker</th><th>Role</th><th>Breaks</th><th>Time on break</th></tr>";
+          table.appendChild(thead);
+
+          const tbody = document.createElement("tbody");
+          const sortedRoster = [...roster].sort((a, b) =>
+            (a.fullName ?? a.email ?? "").localeCompare(b.fullName ?? b.email ?? "", undefined, {
+              sensitivity: "base",
+            })
+          );
+          sortedRoster.forEach((entry) => {
+            const stats = getBreakStatsForToday(entry);
+            const totalMs = stats.breakDurationMs + currentBreakElapsed(entry);
+            const row = document.createElement("tr");
+            const workerCell = document.createElement("td");
+            workerCell.textContent = entry.fullName ?? entry.email ?? "Unknown worker";
+            row.appendChild(workerCell);
+
+            const roleCell = document.createElement("td");
+            roleCell.textContent = roleLabel(entry.role) || "No role set";
+            row.appendChild(roleCell);
+
+            const countCell = document.createElement("td");
+            countCell.textContent = String(stats.breakCount ?? 0);
+            row.appendChild(countCell);
+
+            const timeCell = document.createElement("td");
+            timeCell.textContent = formatDuration(totalMs);
+            row.appendChild(timeCell);
+
+            tbody.appendChild(row);
+          });
+          table.appendChild(tbody);
+          card.appendChild(table);
+          fragment.appendChild(card);
+        });
+
+        logTable.replaceChildren(fragment);
+      }
+
+      function startLogTicker() {
+        stopLogTicker();
+        if (!isAdmin) return;
+        logRefreshTimer = setInterval(() => {
+          renderStaffLogs();
+        }, LOG_REFRESH_INTERVAL_MS);
+      }
+
+      function stopLogTicker() {
+        if (logRefreshTimer) {
+          clearInterval(logRefreshTimer);
+          logRefreshTimer = null;
+        }
+      }
+
+      async function resetLogsForGroups(groupIds) {
+        if (!groupIds.length || !isAdmin) return;
+        isResettingLogs = true;
+        syncLogResetButtons();
+        const label =
+          groupIds.length === Object.keys(GROUPS).length
+            ? "all groups"
+            : `group${groupIds.length > 1 ? "s" : ""} ${groupIds
+                .map((groupId) => groupLabel(groupId))
+                .join(", ")}`;
+        setLogMessage(`Resetting logs for ${label}…`);
+        try {
+          for (const groupId of groupIds) {
+            const rosterRef = collection(db, "groups", groupId, "busRoster");
+            const snapshot = await getDocs(rosterRef);
+            if (snapshot.empty) continue;
+            const docs = snapshot.docs;
+            for (let i = 0; i < docs.length; i += 400) {
+              const batch = writeBatch(db);
+              docs.slice(i, i + 400).forEach((docSnap) => {
+                batch.set(
+                  docSnap.ref,
+                  {
+                    breakCount: 0,
+                    breakDurationMs: 0,
+                    logDateKey: currentResetDateKey(),
+                    updatedAt: serverTimestamp(),
+                  },
+                  { merge: true }
+                );
+              });
+              await batch.commit();
+            }
+          }
+          setLogMessage(`Logs reset for ${label}.`);
+        } catch (error) {
+          console.error("Log reset failed", error);
+          setLogMessage("Unable to reset logs. Try again.", true);
+        } finally {
+          isResettingLogs = false;
+          clearResetConfirmation(resetAllLogsButton);
+          clearResetConfirmation(resetSelectedLogsButton);
+          syncLogResetButtons();
+        }
       }
 
       function startAdminRosterWatchers() {
@@ -1141,10 +1757,7 @@
           const unsubscribe = onSnapshot(
             rosterRef,
             (snapshot) => {
-              const roster = snapshot.docs.map((docSnap) => ({
-                id: docSnap.id,
-                ...docSnap.data(),
-              }));
+              const roster = snapshot.docs.map((docSnap) => normalizeRosterDocument(docSnap));
               adminRosterData.set(groupId, roster);
               renderAdminPanel();
             },
@@ -1180,17 +1793,42 @@
             const seed = {
               email: user.email,
               fullName,
+              role: null,
               isOnBreak: false,
               isOnMealBreak: false,
               joinedAt: null,
               mealJoinedAt: null,
+              breakCount: 0,
+              breakDurationMs: 0,
+              logDateKey: currentResetDateKey(),
               updatedAt: serverTimestamp(),
             };
             await setDoc(ref, seed);
             selfEntry = { id: user.uid, ...seed };
           } else {
             const data = snapshot.data();
-            selfEntry = { id: user.uid, ...data };
+            const roleId = sanitizeRoleId(data.role);
+            const stats = getBreakStatsForToday(data);
+            selfEntry = {
+              id: user.uid,
+              ...data,
+              role: roleId,
+              breakCount: stats.breakCount,
+              breakDurationMs: stats.breakDurationMs,
+              logDateKey: stats.logDateKey,
+            };
+            if (stats.reset) {
+              await setDoc(
+                ref,
+                {
+                  breakCount: 0,
+                  breakDurationMs: 0,
+                  logDateKey: stats.logDateKey,
+                  updatedAt: serverTimestamp(),
+                },
+                { merge: true }
+              );
+            }
             if (fullName && data.fullName !== fullName) {
               await setDoc(
                 ref,
@@ -1203,8 +1841,19 @@
               );
               selfEntry.fullName = fullName;
             }
+            if (data.role !== roleId) {
+              await setDoc(
+                ref,
+                {
+                  role: roleId || null,
+                  updatedAt: serverTimestamp(),
+                },
+                { merge: true }
+              );
+            }
           }
           updateActionButtons();
+          syncRoleUI(selfEntry);
         } catch (error) {
           console.error("Unable to prepare roster entry", error);
           setRosterMessage("Unable to prepare your roster slot.", true);
@@ -1218,16 +1867,14 @@
         rosterUnsubscribe = onSnapshot(
           rosterRef,
           (snapshot) => {
-            rosterEntries = snapshot.docs.map((docSnap) => ({
-              id: docSnap.id,
-              ...docSnap.data(),
-            }));
+            rosterEntries = snapshot.docs.map((docSnap) => normalizeRosterDocument(docSnap));
             if (currentUser) {
               const latestSelf = rosterEntries.find((entry) => entry.id === currentUser.uid);
               if (latestSelf) {
                 selfEntry = latestSelf;
               }
             }
+            syncRoleUI(selfEntry);
             renderLists();
           },
           (error) => {
@@ -1283,6 +1930,9 @@
           setGroupMessage("No group assigned. Contact the owner.", true);
           stopRosterSubscription();
           updateActionButtons();
+          setRoleControlsDisabled(true);
+          setRoleMessage("Role selection will be available after you get a group.", true);
+          syncRoleUI();
           return;
         }
         const data = snapshot.data();
@@ -1292,6 +1942,9 @@
           setGroupMessage("Invalid group assignment. Contact the owner.", true);
           stopRosterSubscription();
           updateActionButtons();
+          setRoleControlsDisabled(true);
+          setRoleMessage("Role selection will be available after you get a valid group.", true);
+          syncRoleUI();
           return;
         }
         if (groupId === currentGroupId) {
@@ -1301,6 +1954,8 @@
         currentGroupId = groupId;
         setGroupMessage(`Group: ${groupLabel(groupId)}`);
         setRosterMessage("");
+        setRoleMessage("");
+        setRoleControlsDisabled(false);
         stopRosterSubscription();
         await ensureRosterEntry(currentUser, groupId);
         startRosterSubscription(groupId);
@@ -1315,23 +1970,40 @@
         }
         const currentEntry =
           rosterEntries.find((entry) => entry.id === currentUser.uid) ?? selfEntry ?? {};
+        if (!sanitizeRoleId(currentEntry.role)) {
+          setRoleMessage("Select your role before updating your break.", true);
+          return;
+        }
         if (targetState && isOnMealBreakToday(currentEntry)) {
           setRosterMessage("End your meal break first.", true);
           return;
         }
+        const stats = getBreakStatsForToday(currentEntry);
+        let breakCount = stats.breakCount;
+        let breakDurationMs = stats.breakDurationMs;
         isRosterMutating = true;
         updateActionButtons();
         setRosterMessage(targetState ? "Starting your break…" : "Ending your break…");
 
         const fullName = getCurrentFullName() || currentUser.email;
+        if (!targetState && isOnBreakToday(currentEntry)) {
+          const joinedAtDate = toDate(currentEntry.joinedAt);
+          const elapsed = joinedAtDate ? Math.max(0, Date.now() - joinedAtDate.getTime()) : 0;
+          breakCount += 1;
+          breakDurationMs += elapsed;
+        }
         const optimisticEntry = {
           id: currentUser.uid,
           email: currentUser.email,
           fullName,
+          role: sanitizeRoleId(currentEntry.role) || null,
           isOnBreak: targetState,
           joinedAt: targetState ? new Date() : null,
           isOnMealBreak: currentEntry.isOnMealBreak ?? false,
           mealJoinedAt: currentEntry.mealJoinedAt ?? null,
+          breakCount,
+          breakDurationMs,
+          logDateKey: stats.logDateKey,
         };
         const index = rosterEntries.findIndex((entry) => entry.id === currentUser.uid);
         if (index >= 0) {
@@ -1348,10 +2020,14 @@
             {
               email: currentUser.email,
               fullName,
+              role: sanitizeRoleId(optimisticEntry.role) || null,
               isOnBreak: targetState,
               joinedAt: targetState ? serverTimestamp() : null,
               isOnMealBreak: optimisticEntry.isOnMealBreak ?? false,
               mealJoinedAt: optimisticEntry.mealJoinedAt ?? null,
+              breakCount,
+              breakDurationMs,
+              logDateKey: stats.logDateKey,
               updatedAt: serverTimestamp(),
             },
             { merge: true }
@@ -1375,10 +2051,15 @@
         }
         const currentEntry =
           rosterEntries.find((entry) => entry.id === currentUser.uid) ?? selfEntry ?? {};
+        if (!sanitizeRoleId(currentEntry.role)) {
+          setRoleMessage("Select your role before updating your break.", true);
+          return;
+        }
         if (targetState && isOnBreakToday(currentEntry)) {
           setRosterMessage("End your regular break first.", true);
           return;
         }
+        const stats = getBreakStatsForToday(currentEntry);
         isRosterMutating = true;
         updateActionButtons();
         setRosterMessage(targetState ? "Starting your meal break…" : "Ending your meal break…");
@@ -1388,10 +2069,14 @@
           id: currentUser.uid,
           email: currentUser.email,
           fullName,
+          role: sanitizeRoleId(currentEntry.role) || null,
           isOnBreak: currentEntry.isOnBreak ?? false,
           joinedAt: currentEntry.joinedAt ?? null,
           isOnMealBreak: targetState,
           mealJoinedAt: targetState ? new Date() : null,
+          breakCount: stats.breakCount,
+          breakDurationMs: stats.breakDurationMs,
+          logDateKey: stats.logDateKey,
         };
         const index = rosterEntries.findIndex((entry) => entry.id === currentUser.uid);
         if (index >= 0) {
@@ -1408,10 +2093,14 @@
             {
               email: currentUser.email,
               fullName,
+              role: sanitizeRoleId(optimisticEntry.role) || null,
               isOnBreak: optimisticEntry.isOnBreak ?? false,
               joinedAt: optimisticEntry.joinedAt ?? null,
               isOnMealBreak: targetState,
               mealJoinedAt: targetState ? serverTimestamp() : null,
+              breakCount: stats.breakCount,
+              breakDurationMs: stats.breakDurationMs,
+              logDateKey: stats.logDateKey,
               updatedAt: serverTimestamp(),
             },
             { merge: true }
@@ -1428,6 +2117,78 @@
         }
       }
 
+      async function updateRoleSelection() {
+        if (!roleSelect) return;
+        if (!currentUser) {
+          setRoleMessage("Sign in to set your role.", true);
+          return;
+        }
+        if (!currentGroupId) {
+          setRoleMessage("Wait for your group assignment first.", true);
+          return;
+        }
+        if (isRoleUpdating) return;
+        const selectedRole = sanitizeRoleId(roleSelect?.value);
+        isRoleUpdating = true;
+        setRoleControlsDisabled(true);
+        setRoleMessage(selectedRole ? "Updating your role…" : "Clearing your role…");
+
+        const currentEntry =
+          rosterEntries.find((entry) => entry.id === currentUser.uid) ?? selfEntry ?? {};
+        const fullName = getCurrentFullName() || currentUser.email;
+        const stats = getBreakStatsForToday(currentEntry);
+        const optimisticEntry = {
+          id: currentUser.uid,
+          email: currentUser.email,
+          fullName,
+          role: selectedRole || null,
+          isOnBreak: currentEntry.isOnBreak ?? false,
+          joinedAt: currentEntry.joinedAt ?? null,
+          isOnMealBreak: currentEntry.isOnMealBreak ?? false,
+          mealJoinedAt: currentEntry.mealJoinedAt ?? null,
+          breakCount: stats.breakCount,
+          breakDurationMs: stats.breakDurationMs,
+          logDateKey: stats.logDateKey,
+        };
+        const index = rosterEntries.findIndex((entry) => entry.id === currentUser.uid);
+        if (index >= 0) {
+          rosterEntries[index] = { ...rosterEntries[index], ...optimisticEntry };
+        } else {
+          rosterEntries = [...rosterEntries, optimisticEntry];
+        }
+        selfEntry = optimisticEntry;
+        syncRoleUI(optimisticEntry);
+        renderLists();
+
+        try {
+          await setDoc(
+            doc(db, "groups", currentGroupId, "busRoster", currentUser.uid),
+            {
+              email: currentUser.email,
+              fullName,
+              role: selectedRole || null,
+              isOnBreak: optimisticEntry.isOnBreak ?? false,
+              joinedAt: optimisticEntry.joinedAt ?? null,
+              isOnMealBreak: optimisticEntry.isOnMealBreak ?? false,
+              mealJoinedAt: optimisticEntry.mealJoinedAt ?? null,
+              breakCount: stats.breakCount,
+              breakDurationMs: stats.breakDurationMs,
+              logDateKey: stats.logDateKey,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+          setRoleMessage(selectedRole ? "Role updated." : "Role cleared.");
+        } catch (error) {
+          console.error("Role update failed", error);
+          setRoleMessage("Unable to update your role. Try again.", true);
+        } finally {
+          isRoleUpdating = false;
+          setRoleControlsDisabled(!currentUser || !currentGroupId);
+          syncRoleUI(selfEntry);
+        }
+      }
+
       function attemptFullNamePrefill() {
         if (authMode !== "register") return;
         const suggestion = recallFullName(emailInput.value.trim());
@@ -1441,6 +2202,7 @@
       });
 
       setAuthMode("signin");
+      populateRoleSelect();
 
       emailInput.addEventListener("blur", attemptFullNamePrefill);
       emailInput.addEventListener("change", attemptFullNamePrefill);
@@ -1508,6 +2270,12 @@
       leaveButton.addEventListener("click", () => updateBreakStatus(false));
       mealJoinButton.addEventListener("click", () => updateMealBreakStatus(true));
       mealLeaveButton.addEventListener("click", () => updateMealBreakStatus(false));
+      if (roleSaveButton) {
+        roleSaveButton.addEventListener("click", updateRoleSelection);
+      }
+      if (roleSelect) {
+        roleSelect.addEventListener("change", () => setRoleMessage(""));
+      }
 
       signOutButton.addEventListener("click", async () => {
         try {
@@ -1520,6 +2288,30 @@
       if (adminSignOutButton) {
         adminSignOutButton.addEventListener("click", () => signOutButton.click());
       }
+      if (resetAllLogsButton) {
+        resetAllLogsButton.addEventListener("click", () => {
+          if (!isAdmin || isResettingLogs) return;
+          const confirmed = requestResetConfirmation(
+            resetAllLogsButton,
+            "Click again to reset all logs"
+          );
+          if (confirmed) {
+            resetLogsForGroups(Object.keys(GROUPS));
+          }
+        });
+      }
+      if (resetSelectedLogsButton) {
+        resetSelectedLogsButton.addEventListener("click", () => {
+          if (!isAdmin || isResettingLogs || selectedLogGroups.size === 0) return;
+          const confirmed = requestResetConfirmation(
+            resetSelectedLogsButton,
+            "Click again to reset selected"
+          );
+          if (confirmed) {
+            resetLogsForGroups([...selectedLogGroups]);
+          }
+        });
+      }
 
       onAuthStateChanged(auth, async (user) => {
         currentUser = user;
@@ -1530,6 +2322,8 @@
           userEmailEl.textContent = user.email;
           setRosterMessage("");
           setGroupMessage(adminStatus ? "Break overview" : "Looking up your group…");
+          setRoleMessage(adminStatus ? "" : "Choose where you're working today.");
+          setRoleControlsDisabled(true);
           try {
             if (pendingIdentity && pendingIdentity.email === user.email) {
               await saveProfileFullName(user, pendingIdentity.fullName);
@@ -1570,6 +2364,7 @@
           userEmailEl.textContent = "—";
           setRosterMessage("");
           setGroupMessage("");
+          setRoleMessage("");
           currentGroupId = null;
           currentProfile = { fullName: "" };
           pendingIdentity = null;
@@ -1577,6 +2372,8 @@
           stopRosterSubscription();
           stopAdminRosterWatchers();
           setAdminMode(false);
+          setRoleControlsDisabled(true);
+          syncRoleUI(null);
         }
 
         toggleViews(Boolean(user));

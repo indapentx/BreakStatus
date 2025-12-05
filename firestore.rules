@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email in [
+          'furkan.ozturk@gmail.com'
+        ];
+    }
+
+    function isValidRole(role) {
+      return role in [
+        'international-departures',
+        'domestic-departures',
+        'management-office',
+        'e-passport',
+        'e-passport-arrivals',
+        'uzak-ucus'
+      ];
+    }
+
+    function rosterPayloadIsAllowed() {
+      return request.resource.data.keys().hasOnly([
+        'email',
+        'fullName',
+        'role',
+        'isOnBreak',
+        'joinedAt',
+        'isOnMealBreak',
+        'mealJoinedAt',
+        'updatedAt'
+      ]) &&
+      (!('role' in request.resource.data) ||
+        request.resource.data.role == null ||
+        isValidRole(request.resource.data.role));
+    }
+
+    function userGroupMatches(groupId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/userGroups/$(request.auth.uid))
+        && get(/databases/$(database)/documents/userGroups/$(request.auth.uid)).data.groupId == groupId;
+    }
+
+    match /systemSettings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /userGroups/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    match /userProfiles/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /groups/{groupId} {
+      allow read: if userGroupMatches(groupId) || isAdmin();
+      allow write: if isAdmin();
+
+      match /busRoster/{userId} {
+        allow read: if userGroupMatches(groupId) || isAdmin();
+        allow write: if rosterPayloadIsAllowed() &&
+          ((userGroupMatches(groupId) && request.auth.uid == userId) || isAdmin());
+      }
+    }
+  }
+}
