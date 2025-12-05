@@ -538,6 +538,21 @@
         gap: 0.75rem;
       }
 
+      .log-card.minimized {
+        opacity: 0.9;
+      }
+
+      .log-card.minimized .log-card-body {
+        display: none;
+      }
+
+      .log-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
       .log-card table {
         width: 100%;
         border-collapse: collapse;
@@ -865,6 +880,8 @@
       const logGroupSelect = document.getElementById("log-group-select");
       const resetSelectedLogsButton = document.getElementById("reset-selected-logs");
       const resetAllLogsButton = document.getElementById("reset-all-logs");
+      const logCollapseButton = document.getElementById("log-collapse-btn");
+      const logExpandButton = document.getElementById("log-expand-btn");
 
       let authMode = "signin";
       let currentUser = null;
@@ -883,12 +900,15 @@
       const adminRosterUnsubscribes = new Map();
       const minimizedAdminGroups = new Set();
       const ADMIN_LAYOUT_STORAGE_PREFIX = "adminGroupLayout";
+      const LOG_LAYOUT_STORAGE_PREFIX = "logGroupLayout";
       const selectedLogGroups = new Set();
       let isResettingLogs = false;
       let logRefreshTimer = null;
       const LOG_REFRESH_INTERVAL_MS = 60_000;
       const RESET_CONFIRM_TIMEOUT_MS = 6_000;
       const resetConfirmTimers = new Map();
+      let logsCollapsed = false;
+      const collapsedLogGroups = new Set();
 
       function toggleViews(isSignedIn) {
         if (isSignedIn) {
@@ -928,6 +948,34 @@
         logsMessage.textContent =
           message || "Track how many breaks and total time spent on break per worker.";
         logsMessage.classList.toggle("error", isError);
+      }
+
+      function syncLogCollapseButtons() {
+        if (logCollapseButton) {
+          logCollapseButton.disabled = logsCollapsed;
+        }
+        if (logExpandButton) {
+          logExpandButton.disabled = !logsCollapsed;
+        }
+      }
+
+      function setLogsCollapsed(collapsed) {
+        logsCollapsed = Boolean(collapsed);
+        if (logTable) {
+          logTable.classList.toggle("hidden", logsCollapsed);
+        }
+        syncLogCollapseButtons();
+      }
+
+      function setLogGroupCollapsed(groupId, collapsed) {
+        if (!isValidGroupId(groupId)) return;
+        if (collapsed) {
+          collapsedLogGroups.add(groupId);
+        } else {
+          collapsedLogGroups.delete(groupId);
+        }
+        saveLogLayout();
+        renderStaffLogs();
       }
 
       function clearResetConfirmation(button) {
@@ -988,15 +1036,19 @@
             logTable.innerHTML = "";
           }
           selectedLogGroups.clear();
+          collapsedLogGroups.clear();
           renderLogGroupSelector();
           setLogMessage("");
+          setLogsCollapsed(false);
         } else {
           loadAdminLayout();
+          loadLogLayout();
           renderAdminPanel();
           renderLogGroupSelector();
           renderStaffLogs();
           setLogMessage("");
           startLogTicker();
+          setLogsCollapsed(false);
         }
       }
 
@@ -1055,6 +1107,36 @@
           parsed.forEach((groupId) => {
             if (isValidGroupId(groupId)) {
               minimizedAdminGroups.add(groupId);
+            }
+          });
+        } catch {
+          /* ignore storage issues */
+        }
+      }
+
+      function logLayoutStorageKey(user = currentUser) {
+        const email = user?.email ? String(user.email).toLowerCase() : "default";
+        return `${LOG_LAYOUT_STORAGE_PREFIX}:${email}`;
+      }
+
+      function saveLogLayout(user = currentUser) {
+        try {
+          localStorage.setItem(logLayoutStorageKey(user), JSON.stringify([...collapsedLogGroups]));
+        } catch {
+          /* ignore storage issues */
+        }
+      }
+
+      function loadLogLayout(user = currentUser) {
+        try {
+          const stored = localStorage.getItem(logLayoutStorageKey(user));
+          if (!stored) return;
+          const parsed = JSON.parse(stored);
+          if (!Array.isArray(parsed)) return;
+          collapsedLogGroups.clear();
+          parsed.forEach((groupId) => {
+            if (isValidGroupId(groupId)) {
+              collapsedLogGroups.add(groupId);
             }
           });
         } catch {
@@ -1626,22 +1708,61 @@
           logTable.innerHTML = '<p class="muted">No groups configured.</p>';
           return;
         }
+        [...collapsedLogGroups].forEach((groupId) => {
+          if (!isValidGroupId(groupId)) {
+            collapsedLogGroups.delete(groupId);
+          }
+        });
+        if (collapsedLogGroups.size >= groupIds.length) {
+          collapsedLogGroups.delete(groupIds[0]);
+        }
+        saveLogLayout();
+        const expandedGroupIds = groupIds.filter((id) => !collapsedLogGroups.has(id));
+        const minimizedGroupIds = groupIds.filter((id) => collapsedLogGroups.has(id));
+        const orderedGroupIds = [...expandedGroupIds, ...minimizedGroupIds];
 
         const fragment = document.createDocumentFragment();
-        groupIds.forEach((groupId) => {
+        orderedGroupIds.forEach((groupId) => {
           const roster = adminRosterData.get(groupId) ?? [];
+          const isCollapsed = collapsedLogGroups.has(groupId);
           const card = document.createElement("div");
-          card.className = "log-card";
+          card.className = `log-card${isCollapsed ? " minimized" : ""}`;
+
+          const header = document.createElement("div");
+          header.className = "log-card-header";
 
           const title = document.createElement("h3");
           title.textContent = `Group ${groupLabel(groupId)}`;
-          card.appendChild(title);
+          header.appendChild(title);
+
+          const toggle = document.createElement("button");
+          toggle.type = "button";
+          toggle.className = "ghost admin-toggle";
+          toggle.textContent = isCollapsed ? "Expand" : "Collapse";
+          const expandedCount = groupIds.length - collapsedLogGroups.size;
+          toggle.disabled = !isCollapsed && expandedCount <= 1;
+          toggle.setAttribute("aria-pressed", String(isCollapsed));
+          toggle.setAttribute("aria-expanded", String(!isCollapsed));
+          toggle.addEventListener("click", () => {
+            const currentlyCollapsed = collapsedLogGroups.has(groupId);
+            const expandedNow = groupIds.length - collapsedLogGroups.size;
+            if (!currentlyCollapsed && expandedNow <= 1) {
+              return;
+            }
+            setLogGroupCollapsed(groupId, !currentlyCollapsed);
+          });
+          header.appendChild(toggle);
+          card.appendChild(header);
+
+          const body = document.createElement("div");
+          body.className = "log-card-body";
 
           if (!roster.length) {
             const empty = document.createElement("p");
             empty.className = "log-empty";
             empty.textContent = "No staff yet.";
-            card.appendChild(empty);
+            body.appendChild(empty);
+            card.appendChild(body);
             fragment.appendChild(card);
             return;
           }
@@ -1681,11 +1802,14 @@
             tbody.appendChild(row);
           });
           table.appendChild(tbody);
-          card.appendChild(table);
+          body.appendChild(table);
+          card.appendChild(body);
           fragment.appendChild(card);
         });
 
         logTable.replaceChildren(fragment);
+        logTable.classList.toggle("hidden", logsCollapsed);
+        syncLogCollapseButtons();
       }
 
       function startLogTicker() {

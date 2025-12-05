@@ -33,7 +33,10 @@ service cloud.firestore {
         'joinedAt',
         'isOnMealBreak',
         'mealJoinedAt',
-        'updatedAt'
+        'updatedAt',
+        'breakCount',
+        'breakDurationMs',
+        'logDateKey'
       ]) &&
       (!('role' in request.resource.data) ||
         request.resource.data.role == null ||
