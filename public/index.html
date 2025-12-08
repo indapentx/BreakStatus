@@ -278,7 +278,7 @@
       .role-row {
         display: flex;
         flex-wrap: wrap;
-        align-items: flex-start;
+        align-items: center;
         gap: 1rem;
         border: 1px solid var(--border);
         border-radius: 14px;
@@ -289,10 +289,16 @@
       .role-meta {
         flex: 1 1 200px;
         min-width: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.2rem;
       }
 
       .role-current {
-        margin: 0.25rem 0 0.15rem;
+        margin: 0;
+        font-size: 1.1rem;
+        letter-spacing: -0.01em;
         font-weight: 600;
       }
 
@@ -771,8 +777,7 @@
 
         <div class="role-row" id="role-row">
           <div class="role-meta">
-            <p class="eyebrow">Role</p>
-            <p class="role-current" id="role-current">No role selected</p>
+            <h2 class="role-current" id="role-current">No role selected</h2>
             <p class="muted" id="role-message"></p>
           </div>
           <div class="role-actions">
@@ -2017,6 +2022,10 @@
                 batch.set(
                   docSnap.ref,
                   {
+                    isOnBreak: false,
+                    joinedAt: null,
+                    isOnMealBreak: false,
+                    mealJoinedAt: null,
                     breakCount: 0,
                     breakDurationMs: 0,
                     mealBreakDurationMs: 0,
