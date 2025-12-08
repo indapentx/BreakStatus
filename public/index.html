@@ -2344,10 +2344,7 @@
               mealJoinedAt: optimisticEntry.mealJoinedAt ?? null,
               breakCount,
               breakDurationMs,
-              lastBreakAt:
-                !startingBreak && currentlyOnBreak
-                  ? serverTimestamp()
-                  : currentEntry.lastBreakAt ?? null,
+              lastBreakAt,
               mealBreakDurationMs,
               logDateKey: stats.logDateKey,
               updatedAt: serverTimestamp(),
@@ -2443,10 +2440,7 @@
               breakCount,
               breakDurationMs,
               mealBreakDurationMs,
-              lastBreakAt:
-                !startingMealBreak && currentlyOnMealBreak
-                  ? serverTimestamp()
-                  : currentEntry.lastBreakAt ?? null,
+              lastBreakAt,
               logDateKey: stats.logDateKey,
               updatedAt: serverTimestamp(),
             },
