@@ -1371,29 +1371,69 @@
         return `${minutes}m`;
       }
 
+      function formatRelativeTime(value) {
+        const date = toDate(value);
+        if (!date) return "—";
+        const diffMs = Date.now() - date.getTime();
+        const direction = diffMs >= 0 ? "ago" : "from now";
+        const absMs = Math.abs(diffMs);
+        const minute = 60_000;
+        const hour = 3_600_000;
+        const day = 86_400_000;
+        if (absMs < minute) return "<1m ago";
+        if (absMs < hour) return `${Math.round(absMs / minute)}m ${direction}`;
+        if (absMs < day) return `${Math.round(absMs / hour)}h ${direction}`;
+        return `${Math.round(absMs / day)}d ${direction}`;
+      }
+
       function normalizeBreakStats(entry) {
         const breakCount = Number.isFinite(entry?.breakCount) ? entry.breakCount : 0;
         const breakDurationMs = Number.isFinite(entry?.breakDurationMs)
           ? Math.max(0, entry.breakDurationMs)
           : 0;
+        const mealBreakDurationMs = Number.isFinite(entry?.mealBreakDurationMs)
+          ? Math.max(0, entry.mealBreakDurationMs)
+          : 0;
         const logDateKey = typeof entry?.logDateKey === "string" ? entry.logDateKey : "";
-        return { breakCount, breakDurationMs, logDateKey };
+        return { breakCount, breakDurationMs, mealBreakDurationMs, logDateKey };
       }
 
       function getBreakStatsForToday(entry) {
         const today = currentResetDateKey();
-        const { breakCount, breakDurationMs, logDateKey } = normalizeBreakStats(entry);
+        const { breakCount, breakDurationMs, mealBreakDurationMs, logDateKey } =
+          normalizeBreakStats(entry);
         if (logDateKey !== today) {
-          return { breakCount: 0, breakDurationMs: 0, logDateKey: today, reset: true };
+          return {
+            breakCount: 0,
+            breakDurationMs: 0,
+            mealBreakDurationMs: 0,
+            logDateKey: today,
+            reset: true,
+          };
         }
-        return { breakCount, breakDurationMs, logDateKey: today, reset: false };
+        return {
+          breakCount,
+          breakDurationMs,
+          mealBreakDurationMs,
+          logDateKey: today,
+          reset: false,
+        };
+      }
+
+      function elapsedSince(value) {
+        const date = toDate(value);
+        if (!date) return 0;
+        return Math.max(0, Date.now() - date.getTime());
+      }
+
+      function currentMealBreakElapsed(entry) {
+        if (!isOnMealBreakToday(entry)) return 0;
+        return elapsedSince(entry.mealJoinedAt);
       }
 
       function currentBreakElapsed(entry) {
         if (!entry?.isOnBreak || !isOnBreakToday(entry)) return 0;
-        const joinedAtDate = toDate(entry.joinedAt);
-        if (!joinedAtDate) return 0;
-        return Math.max(0, Date.now() - joinedAtDate.getTime());
+        return elapsedSince(entry.joinedAt);
       }
 
       function currentResetDateKey() {
@@ -1515,6 +1555,8 @@
           role: sanitizeRoleId(data.role),
           breakCount: stats.breakCount,
           breakDurationMs: stats.breakDurationMs,
+          mealBreakDurationMs: stats.mealBreakDurationMs,
+          lastBreakAt: data.lastBreakAt ?? null,
           logDateKey: stats.logDateKey,
         };
       }
@@ -1872,7 +1914,7 @@
           const table = document.createElement("table");
           const thead = document.createElement("thead");
           thead.innerHTML =
-            "<tr><th>Worker</th><th>Role</th><th>Breaks</th><th>Time on break</th></tr>";
+            "<tr><th>Worker</th><th>Role</th><th>Breaks</th><th>Time on break</th><th>Time on meal break</th><th>Last break</th></tr>";
           table.appendChild(thead);
 
           const tbody = document.createElement("tbody");
@@ -1891,6 +1933,8 @@
           sortedRoster.forEach((entry) => {
             const stats = getBreakStatsForToday(entry);
             const totalMs = stats.breakDurationMs + currentBreakElapsed(entry);
+            const mealTotalMs = stats.mealBreakDurationMs + currentMealBreakElapsed(entry);
+            const lastBreak = entry.lastBreakAt ?? null;
             const row = document.createElement("tr");
             const workerCell = document.createElement("td");
             workerCell.textContent = entry.fullName ?? entry.email ?? "Unknown worker";
@@ -1911,6 +1955,16 @@
             timeCell.textContent = formatDuration(totalMs);
             timeCell.dataset.label = "Time on break";
             row.appendChild(timeCell);
+
+            const mealTimeCell = document.createElement("td");
+            mealTimeCell.textContent = formatDuration(mealTotalMs);
+            mealTimeCell.dataset.label = "Time on meal break";
+            row.appendChild(mealTimeCell);
+
+            const lastBreakCell = document.createElement("td");
+            lastBreakCell.textContent = formatRelativeTime(lastBreak);
+            lastBreakCell.dataset.label = "Last break";
+            row.appendChild(lastBreakCell);
 
             tbody.appendChild(row);
           });
@@ -1965,6 +2019,8 @@
                   {
                     breakCount: 0,
                     breakDurationMs: 0,
+                    mealBreakDurationMs: 0,
+                    lastBreakAt: null,
                     logDateKey: currentResetDateKey(),
                     updatedAt: serverTimestamp(),
                   },
@@ -2035,8 +2091,10 @@
               isOnMealBreak: false,
               joinedAt: null,
               mealJoinedAt: null,
+              lastBreakAt: null,
               breakCount: 0,
               breakDurationMs: 0,
+              mealBreakDurationMs: 0,
               logDateKey: currentResetDateKey(),
               updatedAt: serverTimestamp(),
             };
@@ -2052,6 +2110,8 @@
               role: roleId,
               breakCount: stats.breakCount,
               breakDurationMs: stats.breakDurationMs,
+              mealBreakDurationMs: stats.mealBreakDurationMs,
+              lastBreakAt: data.lastBreakAt ?? null,
               logDateKey: stats.logDateKey,
             };
             if (stats.reset) {
@@ -2060,6 +2120,8 @@
                 {
                   breakCount: 0,
                   breakDurationMs: 0,
+                  mealBreakDurationMs: 0,
+                  lastBreakAt: data.lastBreakAt ?? null,
                   logDateKey: stats.logDateKey,
                   updatedAt: serverTimestamp(),
                 },
@@ -2218,8 +2280,10 @@
         const stats = getBreakStatsForToday(currentEntry);
         let breakCount = stats.breakCount;
         let breakDurationMs = stats.breakDurationMs;
+        const mealBreakDurationMs = stats.mealBreakDurationMs;
         const startingBreak = Boolean(targetState);
         const currentlyOnBreak = isOnBreakToday(currentEntry);
+        const lastBreakAt = !startingBreak && currentlyOnBreak ? new Date() : currentEntry.lastBreakAt ?? null;
         isRosterMutating = true;
         updateActionButtons();
         setRosterMessage(startingBreak ? "Starting your break…" : "Ending your break…");
@@ -2245,6 +2309,8 @@
           mealJoinedAt: currentEntry.mealJoinedAt ?? null,
           breakCount,
           breakDurationMs,
+          lastBreakAt,
+          mealBreakDurationMs,
           logDateKey: stats.logDateKey,
         };
         const index = rosterEntries.findIndex((entry) => entry.id === currentUser.uid);
@@ -2269,6 +2335,11 @@
               mealJoinedAt: optimisticEntry.mealJoinedAt ?? null,
               breakCount,
               breakDurationMs,
+              lastBreakAt:
+                !startingBreak && currentlyOnBreak
+                  ? serverTimestamp()
+                  : currentEntry.lastBreakAt ?? null,
+              mealBreakDurationMs,
               logDateKey: stats.logDateKey,
               updatedAt: serverTimestamp(),
             },
@@ -2302,9 +2373,27 @@
           return;
         }
         const stats = getBreakStatsForToday(currentEntry);
+        let breakCount = stats.breakCount;
+        let breakDurationMs = stats.breakDurationMs;
+        let mealBreakDurationMs = stats.mealBreakDurationMs;
+        const currentlyOnMealBreak = isOnMealBreakToday(currentEntry);
+        const startingMealBreak = Boolean(targetState);
+        const lastBreakAt =
+          !startingMealBreak && currentlyOnMealBreak
+            ? new Date()
+            : currentEntry.lastBreakAt ?? null;
         isRosterMutating = true;
         updateActionButtons();
         setRosterMessage(targetState ? "Starting your meal break…" : "Ending your meal break…");
+
+        if (startingMealBreak) {
+          if (!currentlyOnMealBreak) {
+            breakCount += 1;
+          }
+        } else if (currentlyOnMealBreak) {
+          const elapsed = elapsedSince(currentEntry.mealJoinedAt);
+          mealBreakDurationMs += elapsed;
+        }
 
         const fullName = getCurrentFullName() || currentUser.email;
         const optimisticEntry = {
@@ -2315,9 +2404,11 @@
           isOnBreak: currentEntry.isOnBreak ?? false,
           joinedAt: currentEntry.joinedAt ?? null,
           isOnMealBreak: targetState,
-          mealJoinedAt: targetState ? new Date() : null,
-          breakCount: stats.breakCount,
-          breakDurationMs: stats.breakDurationMs,
+          mealJoinedAt: startingMealBreak ? new Date() : null,
+          breakCount,
+          breakDurationMs,
+          mealBreakDurationMs,
+          lastBreakAt,
           logDateKey: stats.logDateKey,
         };
         const index = rosterEntries.findIndex((entry) => entry.id === currentUser.uid);
@@ -2340,8 +2431,13 @@
               joinedAt: optimisticEntry.joinedAt ?? null,
               isOnMealBreak: targetState,
               mealJoinedAt: targetState ? serverTimestamp() : null,
-              breakCount: stats.breakCount,
-              breakDurationMs: stats.breakDurationMs,
+              breakCount,
+              breakDurationMs,
+              mealBreakDurationMs,
+              lastBreakAt:
+                !startingMealBreak && currentlyOnMealBreak
+                  ? serverTimestamp()
+                  : currentEntry.lastBreakAt ?? null,
               logDateKey: stats.logDateKey,
               updatedAt: serverTimestamp(),
             },
@@ -2390,6 +2486,8 @@
           mealJoinedAt: currentEntry.mealJoinedAt ?? null,
           breakCount: stats.breakCount,
           breakDurationMs: stats.breakDurationMs,
+          mealBreakDurationMs: stats.mealBreakDurationMs,
+          lastBreakAt: currentEntry.lastBreakAt ?? null,
           logDateKey: stats.logDateKey,
         };
         const index = rosterEntries.findIndex((entry) => entry.id === currentUser.uid);
@@ -2415,6 +2513,8 @@
               mealJoinedAt: optimisticEntry.mealJoinedAt ?? null,
               breakCount: stats.breakCount,
               breakDurationMs: stats.breakDurationMs,
+              mealBreakDurationMs: stats.mealBreakDurationMs,
+              lastBreakAt: optimisticEntry.lastBreakAt ?? null,
               logDateKey: stats.logDateKey,
               updatedAt: serverTimestamp(),
             },
