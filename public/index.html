@@ -1234,7 +1234,7 @@
         const signedIn = Boolean(isSignedIn);
         if (authCard) authCard.classList.toggle("hidden", signedIn);
         if (dashboard) dashboard.classList.toggle("hidden", !signedIn || Boolean(isAdmin));
-        if (infoCard) infoCard.classList.toggle("hidden", !signedIn);
+        if (infoCard) infoCard.classList.remove("hidden");
       }
 
       function setAuthMessage(message, isError = false) {
