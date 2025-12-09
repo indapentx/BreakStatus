@@ -497,10 +497,17 @@
 
       .logs-header {
         display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
+        flex-direction: column;
+        align-items: flex-start;
         gap: 0.75rem;
+      }
+
+      .logs-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        align-items: flex-start;
       }
 
       .logs-heading {
@@ -514,6 +521,14 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 0.75rem;
+        width: 100%;
+      }
+
+      .log-reset-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
       }
 
       .log-group-select {
@@ -540,7 +555,7 @@
 
       .log-table {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: minmax(0, 1fr);
         gap: 1rem;
       }
 
@@ -846,22 +861,26 @@
         </div>
         <div class="admin-logs" id="admin-logs">
           <div class="logs-header">
-          <div class="logs-heading">
-            <p class="eyebrow">Break logs</p>
-            <p class="muted hidden" id="logs-message"></p>
-          </div>
-            <div class="logs-actions">
-              <div class="log-group-select" id="log-group-select" aria-label="Select groups to reset">
-                <p class="muted">Loading groups…</p>
-              </div>
-              <button class="ghost" type="button" id="reset-selected-logs" disabled>
-                Reset selected groups
-              </button>
-              <button type="button" id="reset-all-logs">Reset all</button>
+            <div class="logs-heading">
+              <p class="eyebrow">Break logs</p>
             </div>
           </div>
           <div class="log-table" id="log-table">
             <p class="muted">Loading logs…</p>
+          </div>
+          <div class="logs-footer">
+            <div class="logs-actions">
+              <div class="log-group-select" id="log-group-select" aria-label="Select groups to reset">
+                <p class="muted">Loading groups…</p>
+              </div>
+              <div class="log-reset-actions">
+                <button class="ghost" type="button" id="reset-selected-logs" disabled>
+                  Reset selected groups
+                </button>
+                <button type="button" id="reset-all-logs">Reset all</button>
+              </div>
+            </div>
+            <p class="muted hidden" id="logs-message"></p>
           </div>
         </div>
       </section>
