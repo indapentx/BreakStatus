@@ -1234,7 +1234,14 @@
         const signedIn = Boolean(isSignedIn);
         if (authCard) authCard.classList.toggle("hidden", signedIn);
         if (dashboard) dashboard.classList.toggle("hidden", !signedIn || Boolean(isAdmin));
-        if (infoCard) infoCard.classList.toggle("hidden", !signedIn);
+        syncInfoCardVisibility();
+      }
+
+      function syncInfoCardVisibility() {
+        if (!infoCard) return;
+        // const shouldShow = Boolean(isAdmin || (currentUser && currentGroupId));
+        const shouldShow = Boolean(isAdmin);
+        infoCard.classList.toggle("hidden", !shouldShow);
       }
 
       function setAuthMessage(message, isError = false) {
@@ -1443,6 +1450,7 @@
           startLogTicker();
           setLogsCollapsed(false);
         }
+        syncInfoCardVisibility();
       }
 
       function setPasswordVisibility(visible) {
@@ -2532,6 +2540,7 @@
             setGroupMessage("Unable to load your group.", true);
             stopRosterSubscription();
             updateActionButtons();
+            syncInfoCardVisibility();
           }
         );
       }
@@ -2553,6 +2562,7 @@
           setRoleControlsDisabled(true);
           setRoleMessage("Role selection will be available after you get a group.", true);
           syncRoleUI();
+          syncInfoCardVisibility();
           return;
         }
         const data = snapshot.data();
@@ -2565,10 +2575,12 @@
           setRoleControlsDisabled(true);
           setRoleMessage("Role selection will be available after you get a valid group.", true);
           syncRoleUI();
+          syncInfoCardVisibility();
           return;
         }
         if (groupId === currentGroupId) {
           setGroupMessage(`Group: ${groupLabel(groupId)}`);
+          syncInfoCardVisibility();
           return;
         }
         currentGroupId = groupId;
@@ -2579,6 +2591,7 @@
         stopRosterSubscription();
         await ensureRosterEntry(currentUser, groupId);
         startRosterSubscription(groupId);
+        syncInfoCardVisibility();
       }
 
       async function updateBreakStatus(targetState) {
