@@ -313,6 +313,130 @@
         white-space: nowrap;
       }
 
+      .info-card {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+      }
+
+      .info-heading {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+
+      .info-heading h2,
+      .user-email {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+      }
+
+      .info-section {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem;
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .info-section-title {
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+      }
+
+      .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        border-radius: 12px;
+        background: var(--card);
+        border: 1px solid var(--border);
+      }
+
+      .info-item-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .info-item-title {
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      .info-item-desc {
+        margin: 0;
+        color: var(--subtle);
+      }
+
+      .dept-faq {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .faq-row {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.65rem 0.75rem;
+        background: var(--surface);
+      }
+
+      .faq-question {
+        font-weight: 700;
+        margin: 0;
+      }
+
+      .faq-answer {
+        margin: 0.2rem 0 0;
+        color: var(--subtle);
+      }
+
+      .shift-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .shift-table th,
+      .shift-table td {
+        text-align: left;
+        padding: 0.65rem 0.25rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .shift-table th {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--subtle);
+      }
+
 
       .eyebrow {
         text-transform: uppercase;
@@ -320,12 +444,6 @@
         letter-spacing: 0.15em;
         color: var(--subtle);
         margin: 0;
-      }
-
-      .user-email {
-        margin: 0.25rem 0 0;
-        font-size: 1.35rem;
-        font-weight: 600;
       }
 
       .lists {
@@ -883,6 +1001,31 @@
           </div>
         </div>
       </section>
+
+      <section class="card info-card" id="work-info">
+        <div class="info-heading">
+          <p class="eyebrow">Info center</p>
+          <h2>Ops overview & meal breaks</h2>
+        </div>
+        <div class="info-grid">
+          <div class="info-section">
+            <p class="info-section-title">Departments & quick FAQs</p>
+            <ul class="info-list" id="department-list"></ul>
+          </div>
+          <div class="info-section shift-section">
+            <p class="info-section-title">Day / night meal breaks</p>
+            <table class="shift-table" aria-label="Meal break times">
+              <thead>
+                <tr>
+                  <th scope="col">Shift</th>
+                  <th scope="col">Meal break</th>
+                </tr>
+              </thead>
+              <tbody id="meal-shifts"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
     </main>
 
     <script type="module">
@@ -932,6 +1075,82 @@
         { id: "bus-gate", label: "Bus Gate" },
       ]);
 
+      const DEPARTMENT_DETAILS = Object.freeze([
+        {
+          name: "International Departures",
+          description: "Passport control, routing high-risk passengers, balancing queues.",
+          faqs: [
+            {
+              question: "Who do we notify for secondary inspection?",
+              answer: "Notify the duty supervisor and passport desk lead; keep the passenger in sight.",
+            },
+            {
+              question: "How do we split teams when it's busy?",
+              answer:
+                "Prioritize fast track and high-risk flights; rotate support across remaining lines.",
+            },
+          ],
+        },
+        {
+          name: "Domestic Departures",
+          description: "X-ray, boarding gates, and PRM/assisted passenger handling.",
+          faqs: [
+            {
+              question: "What if cabin baggage is oversized?",
+              answer:
+                "Send to the boarding agent; if needed, route back to baggage drop and log the case.",
+            },
+            {
+              question: "How do we handle assisted passengers?",
+              answer:
+                "Plan the escort to the gate, inform boarding crew and supervisor, and confirm a hand-off.",
+            },
+          ],
+        },
+        {
+          name: "E-passport",
+          description: "Monitor self-service kiosks and clear blocked gates quickly.",
+          faqs: [
+            {
+              question: "What if a kiosk locks up?",
+              answer: "Perform a short power cycle; if not fixed, call tech with the device number.",
+            },
+            {
+              question: "Reader alarm goes off - what next?",
+              answer:
+                "Move the passenger to a manual desk and log the device number in the incident note.",
+            },
+          ],
+        },
+        {
+          name: "Bus Gate",
+          description: "Gate-to-bus sync, mass guidance, and headcounts.",
+          faqs: [
+            {
+              question: "If the bus is late, what do we do?",
+              answer:
+                "Inform apron and ops control; open a backup lane to manage passengers.",
+            },
+            {
+              question: "How do we keep headcount during mass arrivals?",
+              answer:
+                "Lead uses a clicker with double-check; align numbers with the departure crew.",
+            },
+          ],
+        },
+      ]);
+
+      const MEAL_SHIFTS = Object.freeze([
+        {
+          shift: "Day shift",
+          meal: "12:00 PM - 13:00 PM",
+        },
+        {
+          shift: "Night shift",
+          meal: "01:30 AM - 03:30 AM",
+        },
+      ]);
+
       const ADMIN_EMAILS = new Set([
         "furkan.ozturk@gmail.com",
       ]);
@@ -943,6 +1162,7 @@
 
       const authCard = document.getElementById("auth-card");
       const dashboard = document.getElementById("dashboard");
+      const infoCard = document.getElementById("work-info");
       const authForm = document.getElementById("auth-form");
       const emailInput = document.getElementById("email");
       const fullNameInput = document.getElementById("full-name");
@@ -980,6 +1200,8 @@
       const resetAllLogsButton = document.getElementById("reset-all-logs");
       const logCollapseButton = document.getElementById("log-collapse-btn");
       const logExpandButton = document.getElementById("log-expand-btn");
+      const departmentList = document.getElementById("department-list");
+      const mealShiftsBody = document.getElementById("meal-shifts");
 
       let authMode = "signin";
       let currentUser = null;
@@ -1009,13 +1231,10 @@
       const collapsedLogGroups = new Set();
 
       function toggleViews(isSignedIn) {
-        if (isSignedIn) {
-          authCard.classList.add("hidden");
-          dashboard.classList.toggle("hidden", Boolean(isAdmin));
-        } else {
-          authCard.classList.remove("hidden");
-          dashboard.classList.add("hidden");
-        }
+        const signedIn = Boolean(isSignedIn);
+        if (authCard) authCard.classList.toggle("hidden", signedIn);
+        if (dashboard) dashboard.classList.toggle("hidden", !signedIn || Boolean(isAdmin));
+        if (infoCard) infoCard.classList.toggle("hidden", !signedIn);
       }
 
       function setAuthMessage(message, isError = false) {
@@ -1075,6 +1294,81 @@
         }
         saveLogLayout();
         renderStaffLogs();
+      }
+
+      function renderDepartmentDetails() {
+        if (!departmentList) return;
+        const fragment = document.createDocumentFragment();
+        DEPARTMENT_DETAILS.forEach((dept) => {
+          const item = document.createElement("li");
+          item.className = "info-item";
+
+          const header = document.createElement("div");
+          header.className = "info-item-header";
+
+          const title = document.createElement("p");
+          title.className = "info-item-title";
+          title.textContent = dept.name;
+          header.appendChild(title);
+
+          item.appendChild(header);
+
+          if (dept.description) {
+            const desc = document.createElement("p");
+            desc.className = "info-item-desc";
+            desc.textContent = dept.description;
+            item.appendChild(desc);
+          }
+
+          if (Array.isArray(dept.faqs) && dept.faqs.length) {
+            const faqList = document.createElement("ul");
+            faqList.className = "dept-faq";
+            dept.faqs.forEach((faq) => {
+              const faqItem = document.createElement("li");
+              faqItem.className = "faq-row";
+
+              const question = document.createElement("p");
+              question.className = "faq-question";
+              question.textContent = faq.question;
+              faqItem.appendChild(question);
+
+              const answer = document.createElement("p");
+              answer.className = "faq-answer";
+              answer.textContent = faq.answer;
+              faqItem.appendChild(answer);
+
+              faqList.appendChild(faqItem);
+            });
+            item.appendChild(faqList);
+          }
+
+          fragment.appendChild(item);
+        });
+        departmentList.replaceChildren(fragment);
+      }
+
+      function renderMealShifts() {
+        if (!mealShiftsBody) return;
+        const fragment = document.createDocumentFragment();
+        MEAL_SHIFTS.forEach((slot) => {
+          const row = document.createElement("tr");
+
+          const shiftCell = document.createElement("td");
+          shiftCell.textContent = slot.shift;
+          row.appendChild(shiftCell);
+
+          const mealCell = document.createElement("td");
+          mealCell.textContent = slot.meal;
+          row.appendChild(mealCell);
+
+          fragment.appendChild(row);
+        });
+        mealShiftsBody.replaceChildren(fragment);
+      }
+
+      function renderWorkInfo() {
+        renderDepartmentDetails();
+        renderMealShifts();
       }
 
       function clearResetConfirmation(button) {
@@ -2745,6 +3039,7 @@
         document.body.classList.remove("app-loading");
       });
 
+      renderWorkInfo();
       renderLists();
     </script>
   </body>
