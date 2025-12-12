@@ -24,6 +24,34 @@ service cloud.firestore {
       ];
     }
 
+    function isValidEmail(email) {
+      return email is string && email.size() > 3 && email.size() <= 320;
+    }
+
+    function isValidFullName(name) {
+      return name is string && name.size() > 0 && name.size() <= 120;
+    }
+
+    function isValidDateKey(key) {
+      return key is string && key.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function isOptionalTimestamp(value) {
+      return value == null || value is timestamp;
+    }
+
+    function isOptionalBool(value) {
+      return value == null || value is bool;
+    }
+
+    function isNonNegativeInt(value, max) {
+      return value is int && value >= 0 && value <= max;
+    }
+
+    function isNonNegativeNumber(value, max) {
+      return (value is int || value is float) && value >= 0 && value <= max;
+    }
+
     function rosterPayloadIsAllowed() {
       return request.resource.data.keys().hasOnly([
         'email',
@@ -42,7 +70,48 @@ service cloud.firestore {
       ]) &&
       (!('role' in request.resource.data) ||
         request.resource.data.role == null ||
-        isValidRole(request.resource.data.role));
+        isValidRole(request.resource.data.role)) &&
+      (!('email' in request.resource.data) ||
+        isValidEmail(request.resource.data.email)) &&
+      (!('fullName' in request.resource.data) ||
+        request.resource.data.fullName == null ||
+        isValidFullName(request.resource.data.fullName)) &&
+      (!('isOnBreak' in request.resource.data) ||
+        isOptionalBool(request.resource.data.isOnBreak)) &&
+      (!('isOnMealBreak' in request.resource.data) ||
+        isOptionalBool(request.resource.data.isOnMealBreak)) &&
+      (!('joinedAt' in request.resource.data) ||
+        isOptionalTimestamp(request.resource.data.joinedAt)) &&
+      (!('mealJoinedAt' in request.resource.data) ||
+        isOptionalTimestamp(request.resource.data.mealJoinedAt)) &&
+      (!('lastBreakAt' in request.resource.data) ||
+        isOptionalTimestamp(request.resource.data.lastBreakAt)) &&
+      (!('updatedAt' in request.resource.data) ||
+        request.resource.data.updatedAt is timestamp) &&
+      (!('breakCount' in request.resource.data) ||
+        isNonNegativeInt(request.resource.data.breakCount, 48)) &&
+      (!('breakDurationMs' in request.resource.data) ||
+        isNonNegativeNumber(request.resource.data.breakDurationMs, 172800000)) &&
+      (!('mealBreakDurationMs' in request.resource.data) ||
+        isNonNegativeNumber(request.resource.data.mealBreakDurationMs, 172800000)) &&
+      (!('logDateKey' in request.resource.data) ||
+        request.resource.data.logDateKey == null ||
+        isValidDateKey(request.resource.data.logDateKey));
+    }
+
+    function profilePayloadIsAllowed(userId) {
+      return request.resource.data.keys().hasOnly([
+        'email',
+        'fullName',
+        'updatedAt'
+      ]) &&
+      (!('email' in request.resource.data) ||
+        (isValidEmail(request.resource.data.email) &&
+          request.resource.data.email == request.auth.token.email)) &&
+      (!('fullName' in request.resource.data) ||
+        isValidFullName(request.resource.data.fullName)) &&
+      (!('updatedAt' in request.resource.data) ||
+        request.resource.data.updatedAt is timestamp);
     }
 
     function userGroupMatches(groupId) {
@@ -61,7 +130,8 @@ service cloud.firestore {
     }
 
     match /userProfiles/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn() && request.auth.uid == userId && profilePayloadIsAllowed(userId);
     }
 
     match /groups/{groupId} {
