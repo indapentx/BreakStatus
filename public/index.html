@@ -54,11 +54,13 @@
         color: var(--text);
         min-height: 100vh;
         display: flex;
-        justify-content: center;
+        flex-direction: column;
+        align-items: center;
       }
 
       main {
         width: min(960px, 100%);
+        flex: 1;
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
@@ -83,6 +85,16 @@
         align-items: flex-start;
       }
 
+      .language-switch.inline {
+        flex-direction: row;
+        align-items: center;
+        gap: 0.65rem;
+      }
+
+      .language-switch.inline select {
+        min-width: 180px;
+      }
+
       .language-label {
         font-size: 0.85rem;
         letter-spacing: 0.06em;
@@ -101,6 +113,43 @@
         margin: 0;
         color: var(--subtle);
         max-width: 52ch;
+      }
+
+      .site-footer {
+        width: min(960px, 100%);
+        margin-top: 1.5rem;
+        padding: 1.2rem 1.4rem;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--card);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
+      .footer-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+
+      .footer-title {
+        margin: 0;
+        font-weight: 700;
+      }
+
+      .footer-note {
+        margin: 0;
+        color: var(--subtle);
+        font-size: 0.95rem;
+      }
+
+      .footer-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
       }
 
       .card {
@@ -789,6 +838,10 @@
         visibility: hidden;
       }
 
+      body.app-loading .site-footer {
+        visibility: hidden;
+      }
+
       body.app-loading::before {
         content: attr(data-loading-label);
         position: fixed;
@@ -816,6 +869,24 @@
 
         #work-info.card {
           padding: 1.25rem;
+        }
+
+        .site-footer {
+          align-items: flex-start;
+          flex-direction: column;
+          padding: 1rem;
+        }
+
+        .footer-actions {
+          width: 100%;
+        }
+
+        .language-switch.inline {
+          width: 100%;
+        }
+
+        .language-switch.inline select {
+          width: 100%;
         }
 
         .lists {
@@ -898,13 +969,6 @@
             <h1 id="app-title">Break Status</h1>
             <p id="app-tagline">Made by Furkan Öztürk for Trend ISG.</p>
           </div>
-          <label class="language-switch" for="language-select">
-            <span class="language-label">Language</span>
-            <select id="language-select" aria-label="Language selection">
-              <option value="en">English</option>
-              <option value="tr">Türkçe</option>
-            </select>
-          </label>
         </div>
       </header>
 
@@ -920,7 +984,7 @@
           </div>
           <label>
             <span class="label-text" id="email-label">Email</span>
-            <input type="email" id="email" name="email" placeholder="you@email.com" required />
+            <input type="email" id="email" name="email" placeholder="saul@email.com" required />
           </label>
           <div class="full-name-field hidden" id="full-name-field">
             <label>
@@ -1092,6 +1156,26 @@
       </section>
     </main>
 
+    <footer class="site-footer">
+      <div class="footer-meta">
+        <p class="footer-title">Trend ISG</p>
+        <p class="footer-note" id="footer-note">Choose your preferred language for the app.</p>
+      </div>
+      <div class="footer-actions">
+        <label class="language-switch inline" for="language-select-footer">
+          <span class="language-label">Language</span>
+          <select
+            id="language-select-footer"
+            data-language-picker
+            aria-label="Language selection"
+          >
+            <option value="en">English</option>
+            <option value="tr">Türkçe</option>
+          </select>
+        </label>
+      </div>
+    </footer>
+
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
       import {
@@ -1140,7 +1224,7 @@
             tabSignIn: "Sign In",
             tabRegister: "Create Account",
             emailLabel: "Email",
-            emailPlaceholder: "you@email.com",
+            emailPlaceholder: "saul@email.com",
             fullNameLabel: "Full name",
             fullNamePlaceholder: "Saul Goodman",
             passwordLabel: "Password",
@@ -1205,6 +1289,9 @@
             mealTitle: "Day / night meal breaks",
             shift: "Shift",
             meal: "Meal break",
+          },
+          footer: {
+            note: "Choose your preferred language.",
           },
           logTable: {
             worker: "Worker",
@@ -1287,7 +1374,7 @@
             tabSignIn: "Giriş yap",
             tabRegister: "Hesap oluştur",
             emailLabel: "E-posta",
-            emailPlaceholder: "ornek@email.com",
+            emailPlaceholder: "saul@email.com",
             fullNameLabel: "Ad soyad",
             fullNamePlaceholder: "Saul Goodman",
             passwordLabel: "Şifre",
@@ -1314,12 +1401,12 @@
           lists: {
             onBreak: "Molada",
             working: "Çalışıyor",
-            onMealBreak: "Yemek molasında",
-            offMealBreak: "Yemek molasında değil",
-            leave: "Dön",
-            join: "Mola başlat",
-            mealLeave: "Yemeği bitir",
-            mealJoin: "Yemek başlat",
+            onMealBreak: "Yemekte",
+            offMealBreak: "Yemekte değil",
+            leave: "Moladan dön",
+            join: "Molaya çık",
+            mealLeave: "Yemekten dön",
+            mealJoin: "Yemeğe çık",
             signInBreak: "Mola listesini görmek için giriş yapın.",
             signInMeal: "Yemek mola listesini görmek için giriş yapın.",
             awaitingGroup: "Grup ataması bekleniyor.",
@@ -1330,7 +1417,7 @@
             everyoneMeal: "Herkes yemek molasında.",
           },
           admin: {
-            staffView: "Personel görünümü",
+            staffView: "Yönetici görünümü",
             loadingGroups: "Grup verileri yükleniyor…",
             loadingLogs: "Kayıtlar yükleniyor…",
             logsHeading: "Mola kayıtları",
@@ -1352,6 +1439,9 @@
             mealTitle: "Gündüz / gece yemek araları",
             shift: "Vardiya",
             meal: "Yemek arası",
+          },
+          footer: {
+            note: "Tercih ettiğiniz dili buradan seçin.",
           },
           logTable: {
             worker: "Personel",
@@ -1448,7 +1538,7 @@
       const DEPARTMENT_DETAILS = Object.freeze([
         {
           id: "international-departures",
-          name: { en: "International Departures", tr: "Dış Hatlar Giden" },
+          name: { en: "International Departures", tr: "Dış Hatlar" },
           description: {
             en: "Passport control, routing high-risk passengers, balancing queues.",
             tr: "Dış hatlardaki görevimiz, yolcuların biletlerini okutarak güvenli bir şekilde geçiş yapmalarını sağlamaktır.",
@@ -1456,26 +1546,29 @@
           faqs: [
             {
               question: {
-                en: "Who do we notify for secondary inspection?",
-                tr: "İkincil kontrol için kimi bilgilendiriyoruz?",
+                en: "Does nationality matter?",
+                tr: "X vatandaşıyım, nereden devam etmeliyim?",
               },
               answer: {
-                en: "Notify the duty supervisor and passport desk lead; keep the passenger in sight.",
-                tr: "Nöbetçi amiri ve pasaport masa sorumlusunu bilgilendir; yolcuyu gözden kaçırma.",
+                en: "No, it doesn't matter.",
+                tr: "Vatandaşlığınızın bir önemi yok. İstediğiniz taraftan geçebilirsiniz.",
               },
             },
             {
-              question: { en: "How do we split teams when it's busy?", tr: "Yoğunlukta ekipleri nasıl bölüyoruz?" },
+              question: {
+                en: "Kıbrıs’a gidiyorum, yurt dışı çıkış harcı ödemem gerekiyor mu?",
+                tr: "Kıbrıs’a gidiyorum, yurt dışı çıkış harcı ödemem gerekiyor mu?"
+              },
               answer: {
-                en: "Prioritize fast track and high-risk flights; rotate support across remaining lines.",
-                tr: "Hızlı geçiş ve riskli uçuşları önceliklendir; kalan hatlara destek rotasyonu yap.",
+                en: "Kimlikle çıkış yapacaksanız gerekmez. Pasaportla çıkış yapacaksanız gerekir.",
+                tr: "Kimlikle çıkış yapacaksanız gerekmez. Pasaportla çıkış yapacaksanız gerekir.",
               },
             },
           ],
-        },
+        },/*
         {
           id: "domestic-departures",
-          name: { en: "Domestic Departures", tr: "İç Hatlar Giden" },
+          name: { en: "Domestic Departures", tr: "İç Hatlar" },
           description: {
             en: "X-ray, boarding gates, and PRM/assisted passenger handling.",
             tr: "X-ray, biniş kapıları ve PRM/yardımlı yolcu yönetimi.",
@@ -1544,13 +1637,15 @@
               },
             },
           ],
-        },
+        },*/
       ]);
+
+      const SHOW_DEPARTMENT_DESCRIPTIONS = false;
 
       const MEAL_SHIFTS = Object.freeze([
         {
           shift: { en: "Day shift", tr: "Gündüz vardiyası" },
-          meal: { en: "12:00 PM - 13:00 PM", tr: "12:00 - 13:00" },
+          meal: { en: "12:00 PM - 2:30 PM", tr: "12:00 - 14:30" },
         },
         {
           shift: { en: "Night shift", tr: "Gece vardiyası" },
@@ -1572,8 +1667,9 @@
       const infoCard = document.getElementById("work-info");
       const appTitleEl = document.getElementById("app-title");
       const appTaglineEl = document.getElementById("app-tagline");
-      const languageSelect = document.getElementById("language-select");
-      const languageLabelEl = document.querySelector(".language-label");
+      const languageSelects = Array.from(document.querySelectorAll("[data-language-picker]"));
+      const languageLabels = Array.from(document.querySelectorAll(".language-label"));
+      const footerNote = document.getElementById("footer-note");
       const authForm = document.getElementById("auth-form");
       const emailInput = document.getElementById("email");
       const fullNameInput = document.getElementById("full-name");
@@ -1690,18 +1786,24 @@
         if (document.body) {
           document.body.dataset.loadingLabel = copy.loading || "";
         }
-        if (languageSelect) {
-          languageSelect.innerHTML = "";
+        languageSelects.forEach((select) => {
+          select.innerHTML = "";
           LANGUAGE_OPTIONS.forEach((langOption) => {
             const option = document.createElement("option");
             option.value = langOption.value;
             option.textContent = langOption.label;
-            languageSelect.appendChild(option);
+            select.appendChild(option);
           });
-          languageSelect.value = currentLanguage;
-        }
-        if (languageLabelEl) {
-          languageLabelEl.textContent = copy.languageLabel;
+          select.value = currentLanguage;
+          if (copy.languageLabel) {
+            select.setAttribute("aria-label", copy.languageLabel);
+          }
+        });
+        languageLabels.forEach((labelEl) => {
+          labelEl.textContent = copy.languageLabel;
+        });
+        if (footerNote) {
+          footerNote.textContent = copy.footer?.note ?? COPY.en.footer?.note ?? "";
         }
         if (appTitleEl) appTitleEl.textContent = copy.header.title;
         if (appTaglineEl) appTaglineEl.textContent = copy.header.tagline;
@@ -1711,9 +1813,6 @@
         if (emailInput) emailInput.placeholder = copy.auth.emailPlaceholder;
         if (fullNameInput) fullNameInput.placeholder = copy.auth.fullNamePlaceholder;
         if (passwordInput) passwordInput.placeholder = copy.auth.passwordPlaceholder;
-        if (languageSelect && copy.languageLabel) {
-          languageSelect.setAttribute("aria-label", copy.languageLabel);
-        }
         const authToggle = document.querySelector(".auth-toggle");
         if (authToggle && copy.auth.ariaAuthMode) {
           authToggle.setAttribute("aria-label", copy.auth.ariaAuthMode);
@@ -1817,8 +1916,7 @@
 
       function syncInfoCardVisibility() {
         if (!infoCard) return;
-        // const shouldShow = Boolean(isAdmin || (currentUser && currentGroupId));
-        const shouldShow = Boolean(isAdmin);
+        const shouldShow = Boolean(isAdmin || (currentUser && currentGroupId));
         infoCard.classList.toggle("hidden", !shouldShow);
       }
 
@@ -1898,7 +1996,7 @@
 
           item.appendChild(header);
 
-          if (dept.description) {
+          if (SHOW_DEPARTMENT_DESCRIPTIONS && dept.description) {
             const desc = document.createElement("p");
             desc.className = "info-item-desc";
             desc.textContent = pickLanguageValue(dept.description);
@@ -3462,11 +3560,11 @@
         button.addEventListener("click", () => setAuthMode(button.dataset.authMode));
       });
 
-      if (languageSelect) {
-        languageSelect.addEventListener("change", (event) =>
+      languageSelects.forEach((select) => {
+        select.addEventListener("change", (event) =>
           setLanguage(event.target.value, { persist: true })
         );
-      }
+      });
 
       applyLanguage();
 
