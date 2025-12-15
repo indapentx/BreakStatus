@@ -68,6 +68,29 @@
         text-align: left;
       }
 
+      .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .language-switch {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        align-items: flex-start;
+      }
+
+      .language-label {
+        font-size: 0.85rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--subtle);
+        font-weight: 700;
+      }
+
       h1 {
         margin: 0 0 0.35rem;
         font-size: clamp(2rem, 4vw, 2.5rem);
@@ -767,7 +790,7 @@
       }
 
       body.app-loading::before {
-        content: "Loading…";
+        content: attr(data-loading-label);
         position: fixed;
         inset: 0;
         display: flex;
@@ -867,11 +890,22 @@
       }
     </style>
   </head>
-  <body class="app-loading">
+  <body class="app-loading" data-loading-label="Loading…">
     <main>
       <header id="site-header">
-        <h1>Break Status</h1>
-        <p>Made by Furkan Öztürk for Trend ISG.</p>
+        <div class="header-top">
+          <div>
+            <h1 id="app-title">Break Status</h1>
+            <p id="app-tagline">Made by Furkan Öztürk for Trend ISG.</p>
+          </div>
+          <label class="language-switch" for="language-select">
+            <span class="language-label">Language</span>
+            <select id="language-select" aria-label="Language selection">
+              <option value="en">English</option>
+              <option value="tr">Türkçe</option>
+            </select>
+          </label>
+        </div>
       </header>
 
       <section class="card auth-card" id="auth-card">
@@ -885,12 +919,12 @@
             </button>
           </div>
           <label>
-            Email
+            <span class="label-text" id="email-label">Email</span>
             <input type="email" id="email" name="email" placeholder="you@email.com" required />
           </label>
           <div class="full-name-field hidden" id="full-name-field">
             <label>
-              Full name
+              <span class="label-text" id="full-name-label">Full name</span>
               <input
                 type="text"
                 id="full-name"
@@ -901,7 +935,7 @@
             </label>
           </div>
           <label>
-            Password
+            <span class="label-text" id="password-label">Password</span>
             <div class="password-input">
               <input
                 type="password"
@@ -925,13 +959,13 @@
           <button type="submit" id="auth-submit">Sign In</button>
         </div>
       </form>
-        <p class="muted" id="auth-message">Use your credentials to access the break list.</p>
+        <p class="muted" id="auth-message"></p>
       </section>
 
       <section class="card dashboard hidden" id="dashboard">
         <div class="user-row">
           <div>
-            <p class="eyebrow">Signed in as</p>
+            <p class="eyebrow" id="signed-in-label">Signed in as</p>
             <p class="user-email" id="user-email">—</p>
           </div>
           <button class="ghost" id="sign-out">Sign Out</button>
@@ -954,7 +988,7 @@
         <div class="lists">
           <div class="list-column">
             <div class="list-header">
-              <h2>On break</h2>
+              <h2 id="on-break-heading">On break</h2>
               <button id="leave-btn" class="ghost" type="button" disabled>Return</button>
             </div>
             <ul class="status-list" id="on-break">
@@ -963,7 +997,7 @@
           </div>
           <div class="list-column">
             <div class="list-header">
-              <h2>Working</h2>
+              <h2 id="working-heading">Working</h2>
               <button id="join-btn" type="button" disabled>Start break</button>
             </div>
             <ul class="status-list" id="off-break">
@@ -974,7 +1008,7 @@
         <div class="lists">
           <div class="list-column">
             <div class="list-header">
-              <h2>On meal break</h2>
+              <h2 id="on-meal-heading">On meal break</h2>
               <button id="meal-leave-btn" class="ghost" type="button" disabled>End meal</button>
             </div>
             <ul class="status-list" id="on-meal-break">
@@ -983,7 +1017,7 @@
           </div>
           <div class="list-column">
             <div class="list-header">
-              <h2>Not on meal break</h2>
+              <h2 id="off-meal-heading">Not on meal break</h2>
               <button id="meal-join-btn" type="button" disabled>Start meal</button>
             </div>
             <ul class="status-list" id="off-meal-break">
@@ -998,7 +1032,7 @@
       <section class="card admin-panel hidden" id="admin-panel">
         <div class="user-row">
           <div>
-            <p class="eyebrow">Staff view</p>
+            <p class="eyebrow" id="admin-staff-label">Staff view</p>
             <p class="user-email" id="admin-user-email">—</p>
           </div>
           <button class="ghost" id="admin-sign-out">Sign Out</button>
@@ -1009,7 +1043,7 @@
         <div class="admin-logs" id="admin-logs">
           <div class="logs-header">
             <div class="logs-heading">
-              <p class="eyebrow">Break logs</p>
+              <p class="eyebrow" id="logs-heading-title">Break logs</p>
             </div>
           </div>
           <div class="log-table" id="log-table">
@@ -1034,8 +1068,8 @@
 
       <section class="card info-card" id="work-info">
         <div class="info-heading">
-          <p class="eyebrow">Ops guide</p>
-          <h2>Departments & FAQs</h2>
+          <p class="eyebrow" id="info-eyebrow">Ops guide</p>
+          <h2 id="info-title">Departments & FAQs</h2>
         </div>
         <div class="info-grid">
           <div class="info-section departments-section">
@@ -1043,12 +1077,12 @@
             <ul class="info-list" id="department-list"></ul>
           </div>
           <div class="info-section shift-section">
-            <p class="info-section-title">Day / night meal breaks</p>
+            <p class="info-section-title" id="meal-shift-title">Day / night meal breaks</p>
             <table class="shift-table" aria-label="Meal break times">
               <thead>
                 <tr>
-                  <th scope="col">Shift</th>
-                  <th scope="col">Meal break</th>
+                  <th scope="col" id="meal-shift-header">Shift</th>
+                  <th scope="col" id="meal-window-header">Meal break</th>
                 </tr>
               </thead>
               <tbody id="meal-shifts"></tbody>
@@ -1089,6 +1123,312 @@
         appId: "1:751472868865:web:eb6702b74236d19913ca00",
       };
 
+      const LANGUAGE_OPTIONS = Object.freeze([
+        { value: "en", label: "English" },
+        { value: "tr", label: "Türkçe" },
+      ]);
+
+      const COPY = Object.freeze({
+        en: {
+          languageLabel: "Language",
+          loading: "Loading…",
+          header: {
+            title: "Break Status",
+            tagline: "Made by Furkan Öztürk for Trend ISG.",
+          },
+          auth: {
+            tabSignIn: "Sign In",
+            tabRegister: "Create Account",
+            emailLabel: "Email",
+            emailPlaceholder: "you@email.com",
+            fullNameLabel: "Full name",
+            fullNamePlaceholder: "Saul Goodman",
+            passwordLabel: "Password",
+            passwordPlaceholder: "Minimum 6 characters",
+            show: "Show",
+            hide: "Hide",
+            submitSignIn: "Sign In",
+            submitRegister: "Create Account",
+            defaultMessage: "Use your credentials to access the break list.",
+            ariaAuthMode: "Authentication mode",
+          },
+          dashboard: {
+            signedInAs: "Signed in as",
+            signOut: "Sign Out",
+            rolePlaceholder: "Choose a role…",
+            updateRole: "Update role",
+            groupLabel: "Group: {group}",
+            breakOverview: "Break overview",
+            lookingUpGroup: "Looking up your group…",
+            chooseRolePrompt: "Choose where you're working today.",
+            noRoleSelected: "No role selected",
+            roleLabel: "Choose your role",
+          },
+          lists: {
+            onBreak: "On break",
+            working: "Working",
+            onMealBreak: "On meal break",
+            offMealBreak: "Not on meal break",
+            leave: "Return",
+            join: "Start break",
+            mealLeave: "End meal",
+            mealJoin: "Start meal",
+            signInBreak: "Sign in to see the break list.",
+            signInMeal: "Sign in to see the meal break list.",
+            awaitingGroup: "Waiting for a group assignment.",
+            noAssignments: "No one is assigned to this group yet.",
+            nobodyOnBreak: "Nobody is on break right now.",
+            nobodyWorking: "Nobody is working right now.",
+            nobodyMeal: "Nobody is on meal break right now.",
+            everyoneMeal: "Everyone is on meal break.",
+          },
+          admin: {
+            staffView: "Staff view",
+            loadingGroups: "Loading group data…",
+            loadingLogs: "Loading logs…",
+            logsHeading: "Break logs",
+            allGroups: "all groups",
+            resetSelected: "Reset selected groups",
+            resetAll: "Reset all",
+            resetAllConfirm: "Click again to reset all logs",
+            resetSelectedConfirm: "Click again to reset selected",
+            groupLabel: "Group {group}",
+            noGroups: "No groups configured.",
+            noUsers: "No users in this group yet.",
+            collapse: "Collapse",
+            expand: "Expand",
+            selectGroupsLabel: "Select groups to reset",
+          },
+          info: {
+            eyebrow: "Ops guide",
+            title: "Departments & FAQs",
+            mealTitle: "Day / night meal breaks",
+            shift: "Shift",
+            meal: "Meal break",
+          },
+          logTable: {
+            worker: "Worker",
+            role: "Role",
+            breaks: "Breaks",
+            timeOnBreak: "Time on break",
+            timeOnMeal: "Time on meal break",
+            lastBreak: "Last break",
+          },
+          persons: {
+            unknown: "Unknown worker",
+            roleNotSet: "Role not set",
+          },
+          messages: {
+            emailRequired: "Enter an email address.",
+            passwordRequired: "Enter a password.",
+            fullNameRequired: "Enter your full name.",
+            creatingAccount: "Creating your account…",
+            accountCreated: "Account created. Signing you in…",
+            signingIn: "Signing you in…",
+            signedIn: "Signed in.",
+            authErrorFallback: "Something went wrong. Try again.",
+            signedOut: "Signed out.",
+            signOutError: "Unable to sign out. Try again.",
+            addFullNameLater: "Add your full name when signing in next time.",
+            syncFullNameFailed: "Unable to sync your full name. Try again.",
+            rosterSlotIssue: "Unable to prepare your roster slot.",
+            rosterPaused: "Live roster updates paused. Refresh the page.",
+            loadGroupError: "Unable to load your group.",
+            noGroupAssigned: "No group assigned. Contact the owner.",
+            invalidGroup: "Invalid group assignment. Contact the owner.",
+            roleAfterGroup: "Role selection will be available after you get a group.",
+            roleAfterValidGroup: "Role selection will be available after you get a valid group.",
+            needGroupBreak: "You need a group before updating break status.",
+            needGroupMeal: "You need a group before updating meal break status.",
+            selectRoleFirst: "Select your role before updating your break.",
+            endMealFirst: "End your meal break first.",
+            endBreakFirst: "End your regular break first.",
+            startingBreak: "Starting your break…",
+            endingBreak: "Ending your break…",
+            onBreak: "You are on break.",
+            backFromBreak: "You are back from break.",
+            breakUpdateFailed: "Update failed. Please try again.",
+            startingMeal: "Starting your meal break…",
+            endingMeal: "Ending your meal break…",
+            onMeal: "You are on meal break.",
+            backFromMeal: "You are back from your meal break.",
+            mealUpdateFailed: "Meal break update failed. Please try again.",
+            signInSetRole: "Sign in to set your role.",
+            waitForGroup: "Wait for your group assignment first.",
+            updatingRole: "Updating your role…",
+            clearingRole: "Clearing your role…",
+            roleUpdated: "Role updated.",
+            roleCleared: "Role cleared.",
+            roleUpdateFailed: "Unable to update your role. Try again.",
+            resettingLogs: "Resetting logs for {label}…",
+            logsReset: "Logs reset for {label}.",
+            resetLogsFailed: "Unable to reset logs. Try again.",
+            groupAwaiting: "Waiting for a group assignment.",
+            authDefault: "Use your credentials to access the break list.",
+            breakOverview: "Break overview",
+          },
+          time: {
+            hour: "h",
+            minute: "m",
+            day: "d",
+            lessThanMinute: "<1m",
+            ago: "ago",
+            fromNow: "from now",
+          },
+        },
+        tr: {
+          languageLabel: "Dil",
+          loading: "Yükleniyor…",
+          header: {
+            title: "Mola Durumu",
+            tagline: "Trend ISG için Furkan Öztürk tarafından yapıldı.",
+          },
+          auth: {
+            tabSignIn: "Giriş yap",
+            tabRegister: "Hesap oluştur",
+            emailLabel: "E-posta",
+            emailPlaceholder: "ornek@email.com",
+            fullNameLabel: "Ad soyad",
+            fullNamePlaceholder: "Saul Goodman",
+            passwordLabel: "Şifre",
+            passwordPlaceholder: "Minimum 6 karakter",
+            show: "Göster",
+            hide: "Gizle",
+            submitSignIn: "Giriş yap",
+            submitRegister: "Hesap oluştur",
+            defaultMessage: "Mola listesine erişmek için bilgilerinizi girin.",
+            ariaAuthMode: "Kimlik doğrulama modu",
+          },
+          dashboard: {
+            signedInAs: "Giriş yapan",
+            signOut: "Çıkış yap",
+            rolePlaceholder: "Rol seçin…",
+            updateRole: "Rolü güncelle",
+            groupLabel: "Grup: {group}",
+            breakOverview: "Mola genel görünümü",
+            lookingUpGroup: "Grubunuz aranıyor…",
+            chooseRolePrompt: "Bugün nerede çalıştığınızı seçin.",
+            noRoleSelected: "Rol seçilmedi",
+            roleLabel: "Rolünüzü seçin",
+          },
+          lists: {
+            onBreak: "Molada",
+            working: "Çalışıyor",
+            onMealBreak: "Yemek molasında",
+            offMealBreak: "Yemek molasında değil",
+            leave: "Dön",
+            join: "Mola başlat",
+            mealLeave: "Yemeği bitir",
+            mealJoin: "Yemek başlat",
+            signInBreak: "Mola listesini görmek için giriş yapın.",
+            signInMeal: "Yemek mola listesini görmek için giriş yapın.",
+            awaitingGroup: "Grup ataması bekleniyor.",
+            noAssignments: "Bu gruba henüz kimse atanmadı.",
+            nobodyOnBreak: "Şu anda molada kimse yok.",
+            nobodyWorking: "Şu anda çalışan kimse yok.",
+            nobodyMeal: "Şu anda yemek molasında kimse yok.",
+            everyoneMeal: "Herkes yemek molasında.",
+          },
+          admin: {
+            staffView: "Personel görünümü",
+            loadingGroups: "Grup verileri yükleniyor…",
+            loadingLogs: "Kayıtlar yükleniyor…",
+            logsHeading: "Mola kayıtları",
+            allGroups: "tüm gruplar",
+            resetSelected: "Seçili grupları sıfırla",
+            resetAll: "Tümünü sıfırla",
+            resetAllConfirm: "Tüm kayıtları sıfırlamak için tekrar tıklayın",
+            resetSelectedConfirm: "Seçilileri sıfırlamak için tekrar tıklayın",
+            groupLabel: "Grup {group}",
+            noGroups: "Henüz tanımlı grup yok.",
+            noUsers: "Bu grupta henüz kullanıcı yok.",
+            collapse: "Daralt",
+            expand: "Genişlet",
+            selectGroupsLabel: "Sıfırlanacak grupları seçin",
+          },
+          info: {
+            eyebrow: "Operasyon rehberi",
+            title: "Departmanlar ve SSS",
+            mealTitle: "Gündüz / gece yemek araları",
+            shift: "Vardiya",
+            meal: "Yemek arası",
+          },
+          logTable: {
+            worker: "Personel",
+            role: "Rol",
+            breaks: "Mola",
+            timeOnBreak: "Mola süresi",
+            timeOnMeal: "Yemek molası süresi",
+            lastBreak: "Son mola",
+          },
+          persons: {
+            unknown: "Bilinmeyen personel",
+            roleNotSet: "Rol seçilmedi",
+          },
+          messages: {
+            emailRequired: "Bir e-posta adresi girin.",
+            passwordRequired: "Bir şifre girin.",
+            fullNameRequired: "Adınızı ve soyadınızı girin.",
+            creatingAccount: "Hesabınız oluşturuluyor…",
+            accountCreated: "Hesap oluşturuldu. Giriş yapılıyor…",
+            signingIn: "Giriş yapılıyor…",
+            signedIn: "Giriş yapıldı.",
+            authErrorFallback: "Bir sorun oluştu. Lütfen tekrar deneyin.",
+            signedOut: "Çıkış yapıldı.",
+            signOutError: "Çıkış yapılamadı. Tekrar deneyin.",
+            addFullNameLater: "Bir dahaki girişinizde ad soyad ekleyin.",
+            syncFullNameFailed: "Ad soyad eşitlenemedi. Tekrar deneyin.",
+            rosterSlotIssue: "Kayıt alanınız hazırlanamadı.",
+            rosterPaused: "Canlı liste durdu. Sayfayı yenileyin.",
+            loadGroupError: "Grubunuz yüklenemedi.",
+            noGroupAssigned: "Grup ataması yok. İlgili kişiye bildirin.",
+            invalidGroup: "Geçersiz grup ataması. İlgili kişiye bildirin.",
+            roleAfterGroup: "Rol seçimi grup ataması sonrası açılacak.",
+            roleAfterValidGroup: "Geçerli bir grup sonrası rol seçimi açılacak.",
+            needGroupBreak: "Mola durumunu güncellemek için bir gruba ihtiyacınız var.",
+            needGroupMeal: "Yemek molasını güncellemek için bir gruba ihtiyacınız var.",
+            selectRoleFirst: "Molanızı güncellemeden önce rol seçin.",
+            endMealFirst: "Önce yemek molasını bitirin.",
+            endBreakFirst: "Önce normal molayı bitirin.",
+            startingBreak: "Molanız başlatılıyor…",
+            endingBreak: "Molanız bitiriliyor…",
+            onBreak: "Moladasınız.",
+            backFromBreak: "Moladan döndünüz.",
+            breakUpdateFailed: "Güncelleme başarısız. Tekrar deneyin.",
+            startingMeal: "Yemek molanız başlatılıyor…",
+            endingMeal: "Yemek molanız bitiriliyor…",
+            onMeal: "Yemek molasındasınız.",
+            backFromMeal: "Yemek molasından döndünüz.",
+            mealUpdateFailed: "Yemek molası güncellemesi başarısız. Tekrar deneyin.",
+            signInSetRole: "Rolünüzü seçmek için giriş yapın.",
+            waitForGroup: "Önce grup atamasını bekleyin.",
+            updatingRole: "Rolünüz güncelleniyor…",
+            clearingRole: "Rolünüz temizleniyor…",
+            roleUpdated: "Rol güncellendi.",
+            roleCleared: "Rol temizlendi.",
+            roleUpdateFailed: "Rol güncellenemedi. Tekrar deneyin.",
+            resettingLogs: "{label} için kayıtlar sıfırlanıyor…",
+            logsReset: "{label} için kayıtlar sıfırlandı.",
+            resetLogsFailed: "Kayıtlar sıfırlanamadı. Tekrar deneyin.",
+            groupAwaiting: "Grup ataması bekleniyor.",
+            authDefault: "Mola listesine erişmek için bilgilerinizi girin.",
+            breakOverview: "Mola genel görünümü",
+          },
+          time: {
+            hour: "s",
+            minute: "dk",
+            day: "g",
+            lessThanMinute: "<1dk",
+            ago: "önce",
+            fromNow: "sonra",
+          },
+        },
+      });
+
+      const DEFAULT_LANGUAGE = "en";
+      let currentLanguage = DEFAULT_LANGUAGE;
+      document.documentElement.lang = currentLanguage;
+
       const GROUPS = Object.freeze({
         A: "A",
         B: "B",
@@ -1097,74 +1437,111 @@
       });
 
       const ROLE_OPTIONS = Object.freeze([
-        { id: "international-departures", label: "International Departures" },
-        { id: "domestic-departures", label: "Domestic Departures" },
-        { id: "management-office", label: "Management Office" },
-        { id: "e-passport", label: "E-passport" },
-        { id: "e-passport-arrivals", label: "E-passport (Arrivals)" },
-        { id: "bus-gate", label: "Bus Gate" },
+        { id: "international-departures", labels: { en: "International Departures", tr: "Dış Hatlar" },},
+        { id: "domestic-departures", labels: { en: "Domestic Departures", tr: "İç Hatlar" }, },
+        { id: "management-office", labels: { en: "Management Office", tr: "Valilik" } },
+        { id: "e-passport", labels: { en: "E-passport", tr: "E-pasaport" } },
+        { id: "e-passport-arrivals", labels: { en: "E-passport (Arrivals)", tr: "E-pasaport (Gelen)" } },
+        { id: "bus-gate", labels: { en: "Bus Gate", tr: "Uzak Uçuş" } },
       ]);
 
       const DEPARTMENT_DETAILS = Object.freeze([
         {
-          name: "International Departures",
-          description: "Passport control, routing high-risk passengers, balancing queues.",
+          id: "international-departures",
+          name: { en: "International Departures", tr: "Dış Hatlar Giden" },
+          description: {
+            en: "Passport control, routing high-risk passengers, balancing queues.",
+            tr: "Dış hatlardaki görevimiz, yolcuların biletlerini okutarak güvenli bir şekilde geçiş yapmalarını sağlamaktır.",
+          },
           faqs: [
             {
-              question: "Who do we notify for secondary inspection?",
-              answer: "Notify the duty supervisor and passport desk lead; keep the passenger in sight.",
+              question: {
+                en: "Who do we notify for secondary inspection?",
+                tr: "İkincil kontrol için kimi bilgilendiriyoruz?",
+              },
+              answer: {
+                en: "Notify the duty supervisor and passport desk lead; keep the passenger in sight.",
+                tr: "Nöbetçi amiri ve pasaport masa sorumlusunu bilgilendir; yolcuyu gözden kaçırma.",
+              },
             },
             {
-              question: "How do we split teams when it's busy?",
-              answer:
-                "Prioritize fast track and high-risk flights; rotate support across remaining lines.",
+              question: { en: "How do we split teams when it's busy?", tr: "Yoğunlukta ekipleri nasıl bölüyoruz?" },
+              answer: {
+                en: "Prioritize fast track and high-risk flights; rotate support across remaining lines.",
+                tr: "Hızlı geçiş ve riskli uçuşları önceliklendir; kalan hatlara destek rotasyonu yap.",
+              },
             },
           ],
         },
         {
-          name: "Domestic Departures",
-          description: "X-ray, boarding gates, and PRM/assisted passenger handling.",
+          id: "domestic-departures",
+          name: { en: "Domestic Departures", tr: "İç Hatlar Giden" },
+          description: {
+            en: "X-ray, boarding gates, and PRM/assisted passenger handling.",
+            tr: "X-ray, biniş kapıları ve PRM/yardımlı yolcu yönetimi.",
+          },
           faqs: [
             {
-              question: "What if cabin baggage is oversized?",
-              answer:
-                "Send to the boarding agent; if needed, route back to baggage drop and log the case.",
+              question: { en: "What if cabin baggage is oversized?", tr: "Kabin bagajı büyükse ne yaparız?" },
+              answer: {
+                en: "Send to the boarding agent; if needed, route back to baggage drop and log the case.",
+                tr: "Biniş görevlisine yönlendir; gerekirse bagaj teslimine geri gönder ve olayı kaydet.",
+              },
             },
             {
-              question: "How do we handle assisted passengers?",
-              answer:
-                "Plan the escort to the gate, inform boarding crew and supervisor, and confirm a hand-off.",
+              question: { en: "How do we handle assisted passengers?", tr: "Yardımlı yolcuyu nasıl yönetiriz?" },
+              answer: {
+                en: "Plan the escort to the gate, inform boarding crew and supervisor, and confirm a hand-off.",
+                tr: "Kapıya refakat planı yap, biniş ekibi ve amiri bilgilendir, devir teslimi teyit et.",
+              },
             },
           ],
         },
         {
-          name: "E-passport",
-          description: "Monitor self-service kiosks and clear blocked gates quickly.",
+          id: "e-passport",
+          name: { en: "E-passport", tr: "E-pasaport" },
+          description: {
+            en: "Monitor self-service kiosks and clear blocked gates quickly.",
+            tr: "Self-servis kioskları izle ve kilitlenen kapıları hızlıca aç.",
+          },
           faqs: [
             {
-              question: "What if a kiosk locks up?",
-              answer: "Perform a short power cycle; if not fixed, call tech with the device number.",
+              question: { en: "What if a kiosk locks up?", tr: "Kiosk kilitlenirse ne yaparız?" },
+              answer: {
+                en: "Perform a short power cycle; if not fixed, call tech with the device number.",
+                tr: "Kısa bir kapat/aç yap; düzelmezse cihaz numarasıyla teknik ekibi ara.",
+              },
             },
             {
-              question: "Reader alarm goes off - what next?",
-              answer:
-                "Move the passenger to a manual desk and log the device number in the incident note.",
+              question: { en: "Reader alarm goes off - what next?", tr: "Okuyucu alarm verirse ne yaparız?" },
+              answer: {
+                en: "Move the passenger to a manual desk and log the device number in the incident note.",
+                tr: "Yolcuyu manuel bankoya yönlendir ve cihaz numarasını vaka notuna yaz.",
+              },
             },
           ],
         },
         {
-          name: "Bus Gate",
-          description: "Gate-to-bus sync, mass guidance, and headcounts.",
+          id: "bus-gate",
+          name: { en: "Bus Gate", tr: "Otobüs Kapısı" },
+          description: {
+            en: "Gate-to-bus sync, mass guidance, and headcounts.",
+            tr: "Kapı-otobüs eşlemesi, kalabalık yönlendirme ve sayım.",
+          },
           faqs: [
             {
-              question: "If the bus is late, what do we do?",
-              answer:
-                "Inform apron and ops control; open a backup lane to manage passengers.",
+              question: { en: "If the bus is late, what do we do?", tr: "Otobüs gecikirse ne yaparız?" },
+              answer: {
+                en: "Inform apron and ops control; open a backup lane to manage passengers.",
+                tr: "Apron ve operasyon kontrolü bilgilendir; yolcuyu yönetmek için yedek hat aç.",
+              },
             },
             {
-              question: "How do we keep headcount during mass arrivals?",
-              answer:
-                "Lead uses a clicker with double-check; align numbers with the departure crew.",
+              question: { en: "How do we keep headcount during mass arrivals?", tr: "Toplu gelişlerde sayımı nasıl tutarız?" },
+              answer: {
+                en: "Lead uses a clicker with double-check; align numbers with the departure crew.",
+                tr: "Ekip lideri sayaçla çift kontrol yapar; sayıları kalkış ekibiyle eşleştir.",
+              },
             },
           ],
         },
@@ -1172,12 +1549,12 @@
 
       const MEAL_SHIFTS = Object.freeze([
         {
-          shift: "Day shift",
-          meal: "12:00 PM - 13:00 PM",
+          shift: { en: "Day shift", tr: "Gündüz vardiyası" },
+          meal: { en: "12:00 PM - 13:00 PM", tr: "12:00 - 13:00" },
         },
         {
-          shift: "Night shift",
-          meal: "01:30 AM - 03:30 AM",
+          shift: { en: "Night shift", tr: "Gece vardiyası" },
+          meal: { en: "01:30 AM - 03:30 AM", tr: "01:30 - 03:30" },
         },
       ]);
 
@@ -1193,6 +1570,10 @@
       const authCard = document.getElementById("auth-card");
       const dashboard = document.getElementById("dashboard");
       const infoCard = document.getElementById("work-info");
+      const appTitleEl = document.getElementById("app-title");
+      const appTaglineEl = document.getElementById("app-tagline");
+      const languageSelect = document.getElementById("language-select");
+      const languageLabelEl = document.querySelector(".language-label");
       const authForm = document.getElementById("auth-form");
       const emailInput = document.getElementById("email");
       const fullNameInput = document.getElementById("full-name");
@@ -1202,6 +1583,9 @@
       const fullNameField = document.getElementById("full-name-field");
       const authSubmitButton = document.getElementById("auth-submit");
       const authMessage = document.getElementById("auth-message");
+      const emailLabelEl = document.getElementById("email-label");
+      const fullNameLabelEl = document.getElementById("full-name-label");
+      const passwordLabelEl = document.getElementById("password-label");
       const rosterMessage = document.getElementById("roster-message");
       const groupMessage = document.getElementById("group-message");
       const joinButton = document.getElementById("join-btn");
@@ -1222,6 +1606,11 @@
       const roleSaveButton = document.getElementById("role-save");
       const roleCurrent = document.getElementById("role-current");
       const roleMessage = document.getElementById("role-message");
+      const signedInLabel = document.getElementById("signed-in-label");
+      const onBreakHeading = document.getElementById("on-break-heading");
+      const workingHeading = document.getElementById("working-heading");
+      const onMealHeading = document.getElementById("on-meal-heading");
+      const offMealHeading = document.getElementById("off-meal-heading");
       const adminLogsSection = document.getElementById("admin-logs");
       const logTable = document.getElementById("log-table");
       const logsMessage = document.getElementById("logs-message");
@@ -1232,11 +1621,18 @@
       const logExpandButton = document.getElementById("log-expand-btn");
       const departmentList = document.getElementById("department-list");
       const mealShiftsBody = document.getElementById("meal-shifts");
+      const infoEyebrow = document.getElementById("info-eyebrow");
+      const infoTitle = document.getElementById("info-title");
+      const mealShiftTitle = document.getElementById("meal-shift-title");
+      const mealShiftHeader = document.getElementById("meal-shift-header");
+      const mealWindowHeader = document.getElementById("meal-window-header");
+      const logsHeadingTitle = document.getElementById("logs-heading-title");
+      const adminStaffLabel = document.getElementById("admin-staff-label");
 
       let authMode = "signin";
       let currentUser = null;
       let currentGroupId = null;
-      let currentProfile = { fullName: "" };
+      let currentProfile = { fullName: "", language: null };
       let pendingIdentity = null;
       let rosterEntries = [];
       let rosterUnsubscribe = null;
@@ -1259,6 +1655,158 @@
       const resetConfirmTimers = new Map();
       let logsCollapsed = false;
       const collapsedLogGroups = new Set();
+
+      function getCopy() {
+        return COPY[currentLanguage] || COPY.en;
+      }
+
+      function isValidLanguage(lang) {
+        return Boolean(lang && COPY[lang]);
+      }
+
+      function t(path, replacements = {}) {
+        const parts = String(path || "").split(".");
+        const langCopy = getCopy();
+        const fallbackCopy = COPY.en;
+        const resolve = (copy) => parts.reduce((value, key) => value?.[key], copy);
+        let template = resolve(langCopy);
+        if (template === undefined) {
+          template = resolve(fallbackCopy);
+        }
+        if (typeof template !== "string") return "";
+        return template.replace(/\{(\w+)\}/g, (match, key) =>
+          Object.prototype.hasOwnProperty.call(replacements, key) ? replacements[key] : match
+        );
+      }
+
+      function pickLanguageValue(map) {
+        if (!map) return "";
+        return map[currentLanguage] ?? map.en ?? "";
+      }
+
+      function applyLanguage() {
+        const copy = getCopy();
+        document.documentElement.lang = currentLanguage;
+        if (document.body) {
+          document.body.dataset.loadingLabel = copy.loading || "";
+        }
+        if (languageSelect) {
+          languageSelect.innerHTML = "";
+          LANGUAGE_OPTIONS.forEach((langOption) => {
+            const option = document.createElement("option");
+            option.value = langOption.value;
+            option.textContent = langOption.label;
+            languageSelect.appendChild(option);
+          });
+          languageSelect.value = currentLanguage;
+        }
+        if (languageLabelEl) {
+          languageLabelEl.textContent = copy.languageLabel;
+        }
+        if (appTitleEl) appTitleEl.textContent = copy.header.title;
+        if (appTaglineEl) appTaglineEl.textContent = copy.header.tagline;
+        if (emailLabelEl) emailLabelEl.textContent = copy.auth.emailLabel;
+        if (fullNameLabelEl) fullNameLabelEl.textContent = copy.auth.fullNameLabel;
+        if (passwordLabelEl) passwordLabelEl.textContent = copy.auth.passwordLabel;
+        if (emailInput) emailInput.placeholder = copy.auth.emailPlaceholder;
+        if (fullNameInput) fullNameInput.placeholder = copy.auth.fullNamePlaceholder;
+        if (passwordInput) passwordInput.placeholder = copy.auth.passwordPlaceholder;
+        if (languageSelect && copy.languageLabel) {
+          languageSelect.setAttribute("aria-label", copy.languageLabel);
+        }
+        const authToggle = document.querySelector(".auth-toggle");
+        if (authToggle && copy.auth.ariaAuthMode) {
+          authToggle.setAttribute("aria-label", copy.auth.ariaAuthMode);
+        }
+        const roleSelectLabel = document.querySelector('label[for="role-select"]');
+        if (roleSelectLabel) {
+          roleSelectLabel.textContent = copy.dashboard.roleLabel;
+        }
+        const srInfoTitle = document.querySelector(".info-section-title.sr-only");
+        if (srInfoTitle) {
+          srInfoTitle.textContent = copy.info.title;
+        }
+        const mealTable = document.querySelector(".shift-table");
+        if (mealTable && copy.info.mealTitle) {
+          mealTable.setAttribute("aria-label", copy.info.mealTitle);
+        }
+        if (signedInLabel) signedInLabel.textContent = copy.dashboard.signedInAs;
+        if (onBreakHeading) onBreakHeading.textContent = copy.lists.onBreak;
+        if (workingHeading) workingHeading.textContent = copy.lists.working;
+        if (onMealHeading) onMealHeading.textContent = copy.lists.onMealBreak;
+        if (offMealHeading) offMealHeading.textContent = copy.lists.offMealBreak;
+        if (joinButton) joinButton.textContent = copy.lists.join;
+        if (leaveButton) leaveButton.textContent = copy.lists.leave;
+        if (mealJoinButton) mealJoinButton.textContent = copy.lists.mealJoin;
+        if (mealLeaveButton) mealLeaveButton.textContent = copy.lists.mealLeave;
+        if (signOutButton) signOutButton.textContent = copy.dashboard.signOut;
+        if (adminSignOutButton) adminSignOutButton.textContent = copy.dashboard.signOut;
+        if (roleSaveButton) roleSaveButton.textContent = copy.dashboard.updateRole;
+        if (adminStaffLabel) adminStaffLabel.textContent = copy.admin.staffView;
+        if (logsHeadingTitle) logsHeadingTitle.textContent = copy.admin.logsHeading;
+        if (resetSelectedLogsButton) {
+          resetSelectedLogsButton.textContent = copy.admin.resetSelected;
+          resetSelectedLogsButton.dataset.defaultLabel = copy.admin.resetSelected;
+        }
+        if (resetAllLogsButton) {
+          resetAllLogsButton.textContent = copy.admin.resetAll;
+          resetAllLogsButton.dataset.defaultLabel = copy.admin.resetAll;
+        }
+        if (logGroupSelect) logGroupSelect.setAttribute("aria-label", copy.admin.selectGroupsLabel);
+        if (infoEyebrow) infoEyebrow.textContent = copy.info.eyebrow;
+        if (infoTitle) infoTitle.textContent = copy.info.title;
+        if (mealShiftTitle) mealShiftTitle.textContent = copy.info.mealTitle;
+        if (mealShiftHeader) mealShiftHeader.textContent = copy.info.shift;
+        if (mealWindowHeader) mealWindowHeader.textContent = copy.info.meal;
+        setAuthMode(authMode, { keepMessage: true, keepPasswordVisibility: true });
+        populateRoleSelect();
+        renderWorkInfo();
+        renderLists();
+        renderAdminPanel();
+        renderLogGroupSelector();
+        renderStaffLogs();
+        clearResetConfirmation(resetAllLogsButton);
+        clearResetConfirmation(resetSelectedLogsButton);
+        if (groupMessage && !groupMessage.classList.contains("error")) {
+          if (isAdmin) {
+            setGroupMessage(t("messages.breakOverview"));
+          } else if (currentGroupId && currentUser) {
+            setGroupMessage(t("dashboard.groupLabel", { group: groupLabel(currentGroupId) }));
+          } else if (currentUser) {
+            setGroupMessage(t("dashboard.lookingUpGroup"));
+          } else {
+            setGroupMessage("");
+          }
+        }
+      }
+
+      async function persistLanguagePreference(user, lang) {
+        if (!user || !isValidLanguage(lang)) return;
+        try {
+          await setDoc(
+            doc(db, "userProfiles", user.uid),
+            { language: lang, updatedAt: serverTimestamp() },
+            { merge: true }
+          );
+          currentProfile = { ...currentProfile, language: lang };
+        } catch (error) {
+          console.error("Unable to save language preference", error);
+        }
+      }
+
+      function setLanguage(lang, { persist = false } = {}) {
+        const nextLang = isValidLanguage(lang) ? lang : DEFAULT_LANGUAGE;
+        const shouldPersist =
+          persist &&
+          currentUser &&
+          (!isValidLanguage(currentProfile?.language) || currentProfile.language !== nextLang);
+        currentLanguage = nextLang;
+        document.documentElement.lang = currentLanguage;
+        applyLanguage();
+        if (shouldPersist) {
+          persistLanguagePreference(currentUser, currentLanguage);
+        }
+      }
 
       function toggleViews(isSignedIn) {
         const signedIn = Boolean(isSignedIn);
@@ -1345,7 +1893,7 @@
 
           const title = document.createElement("p");
           title.className = "info-item-title";
-          title.textContent = dept.name;
+          title.textContent = pickLanguageValue(dept.name);
           header.appendChild(title);
 
           item.appendChild(header);
@@ -1353,7 +1901,7 @@
           if (dept.description) {
             const desc = document.createElement("p");
             desc.className = "info-item-desc";
-            desc.textContent = dept.description;
+            desc.textContent = pickLanguageValue(dept.description);
             item.appendChild(desc);
           }
 
@@ -1366,12 +1914,12 @@
 
               const question = document.createElement("p");
               question.className = "faq-question";
-              question.textContent = faq.question;
+              question.textContent = pickLanguageValue(faq.question);
               faqItem.appendChild(question);
 
               const answer = document.createElement("p");
               answer.className = "faq-answer";
-              answer.textContent = faq.answer;
+              answer.textContent = pickLanguageValue(faq.answer);
               faqItem.appendChild(answer);
 
               faqList.appendChild(faqItem);
@@ -1391,11 +1939,11 @@
           const row = document.createElement("tr");
 
           const shiftCell = document.createElement("td");
-          shiftCell.textContent = slot.shift;
+          shiftCell.textContent = pickLanguageValue(slot.shift);
           row.appendChild(shiftCell);
 
           const mealCell = document.createElement("td");
-          mealCell.textContent = slot.meal;
+          mealCell.textContent = pickLanguageValue(slot.meal);
           row.appendChild(mealCell);
 
           fragment.appendChild(row);
@@ -1488,27 +2036,37 @@
         isPasswordVisible = Boolean(visible);
         passwordInput.type = isPasswordVisible ? "text" : "password";
         if (passwordToggleButton) {
-          passwordToggleButton.textContent = isPasswordVisible ? "Hide" : "Show";
+          const copy = getCopy();
+          passwordToggleButton.textContent = isPasswordVisible ? copy.auth.hide : copy.auth.show;
           passwordToggleButton.setAttribute("aria-pressed", String(isPasswordVisible));
         }
       }
 
-      function setAuthMode(mode) {
+      function setAuthMode(mode, { keepMessage = false, keepPasswordVisibility = false } = {}) {
         authMode = mode === "register" ? "register" : "signin";
         const needsFullName = authMode === "register";
+        const copy = getCopy();
         modeButtons.forEach((button) => {
           const isActive = button.dataset.authMode === authMode;
           button.classList.toggle("active", isActive);
           button.setAttribute("aria-pressed", String(isActive));
+          const label =
+            button.dataset.authMode === "register" ? copy.auth.tabRegister : copy.auth.tabSignIn;
+          button.textContent = label;
         });
         fullNameField.classList.toggle("hidden", !needsFullName);
         fullNameInput.required = needsFullName;
-        authSubmitButton.textContent = needsFullName ? "Create Account" : "Sign In";
+        authSubmitButton.textContent = needsFullName
+          ? copy.auth.submitRegister
+          : copy.auth.submitSignIn;
         if (needsFullName) {
           attemptFullNamePrefill();
         }
-        setAuthMessage("");
-        setPasswordVisibility(false);
+        if (!keepMessage) {
+          setAuthMessage("");
+        }
+        const nextVisibility = keepPasswordVisibility ? isPasswordVisible : false;
+        setPasswordVisibility(nextVisibility);
       }
 
       function isValidGroupId(groupId) {
@@ -1577,7 +2135,7 @@
 
       function roleLabel(roleId) {
         const match = ROLE_OPTIONS.find((role) => role.id === roleId);
-        return match ? match.label : "";
+        return match ? pickLanguageValue(match.labels) : "";
       }
 
       function sanitizeRoleId(roleId) {
@@ -1587,11 +2145,11 @@
       function populateRoleSelect() {
         if (!roleSelect) return;
         const current = roleSelect.value;
-        roleSelect.innerHTML = '<option value="">Choose a role…</option>';
+        roleSelect.innerHTML = `<option value="">${t("dashboard.rolePlaceholder")}</option>`;
         ROLE_OPTIONS.forEach((role) => {
           const option = document.createElement("option");
           option.value = role.id;
-          option.textContent = role.label;
+          option.textContent = roleLabel(role.id);
           roleSelect.appendChild(option);
         });
         if (current && sanitizeRoleId(current)) {
@@ -1611,13 +2169,13 @@
         }
         if (roleCurrent) {
           const label = roleLabel(roleId);
-          roleCurrent.textContent = label || "No role selected";
+          roleCurrent.textContent = label || t("dashboard.noRoleSelected");
         }
         setRoleControlsDisabled(!currentUser || !currentGroupId || isRoleUpdating);
       }
 
       function groupLabel(groupId) {
-        return GROUPS[groupId] ?? groupId ?? "Unknown";
+        return GROUPS[groupId] ?? groupId ?? "";
       }
 
       function sanitizeFullName(value) {
@@ -1704,11 +2262,13 @@
       function formatTime(value) {
         const date = toDate(value);
         if (!date) return "--:--";
+        const locale = currentLanguage === "tr" ? "tr-TR" : "en-US";
+        const use24Hour = currentLanguage === "tr";
         try {
-          return new Intl.DateTimeFormat("en-US", {
+          return new Intl.DateTimeFormat(locale, {
             hour: "numeric",
             minute: "2-digit",
-            hour12: true,
+            hour12: !use24Hour,
           }).format(date);
         } catch {
           return "--:--";
@@ -1716,29 +2276,36 @@
       }
 
       function formatDuration(ms) {
+        const labels = getCopy().time || COPY.en.time;
         const safeMs = Number.isFinite(ms) ? ms : 0;
-        if (safeMs <= 0) return "0m";
+        const minuteLabel = labels.minute || "m";
+        const hourLabel = labels.hour || "h";
+        if (safeMs <= 0) return `0${minuteLabel}`;
         const totalMinutes = Math.round(safeMs / 60000);
         const hours = Math.floor(totalMinutes / 60);
         const minutes = totalMinutes % 60;
-        if (hours && minutes) return `${hours}h ${minutes}m`;
-        if (hours) return `${hours}h`;
-        return `${minutes}m`;
+        if (hours && minutes) return `${hours}${hourLabel} ${minutes}${minuteLabel}`;
+        if (hours) return `${hours}${hourLabel}`;
+        return `${minutes}${minuteLabel}`;
       }
 
       function formatRelativeTime(value) {
         const date = toDate(value);
         if (!date) return "—";
         const diffMs = Date.now() - date.getTime();
-        const direction = diffMs >= 0 ? "ago" : "from now";
+        const labels = getCopy().time || COPY.en.time;
+        const direction = diffMs >= 0 ? labels.ago : labels.fromNow;
         const absMs = Math.abs(diffMs);
         const minute = 60_000;
         const hour = 3_600_000;
         const day = 86_400_000;
-        if (absMs < minute) return "<1m ago";
-        if (absMs < hour) return `${Math.round(absMs / minute)}m ${direction}`;
-        if (absMs < day) return `${Math.round(absMs / hour)}h ${direction}`;
-        return `${Math.round(absMs / day)}d ${direction}`;
+        if (absMs < minute) {
+          const base = labels.lessThanMinute || "<1m";
+          return `${base} ${direction}`.trim();
+        }
+        if (absMs < hour) return `${Math.round(absMs / minute)}${labels.minute} ${direction}`;
+        if (absMs < day) return `${Math.round(absMs / hour)}${labels.hour} ${direction}`;
+        return `${Math.round(absMs / day)}${labels.day} ${direction}`;
       }
 
       function normalizeBreakStats(entry) {
@@ -1867,13 +2434,13 @@
 
         const nameSpan = document.createElement("span");
         nameSpan.className = "person-name";
-        nameSpan.textContent = entry.fullName ?? entry.email ?? "Unknown worker";
+        nameSpan.textContent = entry.fullName ?? entry.email ?? t("persons.unknown");
         person.appendChild(nameSpan);
 
         const roleText = roleLabel(entry.role);
         const roleSpan = document.createElement("span");
         roleSpan.className = "person-role";
-        roleSpan.textContent = roleText || "Role not set";
+        roleSpan.textContent = roleText || t("persons.roleNotSet");
         person.appendChild(roleSpan);
 
         li.appendChild(person);
@@ -1917,18 +2484,19 @@
       }
 
       function renderLists() {
+        const copy = getCopy();
         if (!currentUser) {
-          onBreakList.innerHTML = '<li class="empty">Sign in to see the break list.</li>';
-          offBreakList.innerHTML = '<li class="empty">Sign in to see the break list.</li>';
-          onMealBreakList.innerHTML = '<li class="empty">Sign in to see the meal break list.</li>';
-          offMealBreakList.innerHTML = '<li class="empty">Sign in to see the meal break list.</li>';
+          onBreakList.innerHTML = `<li class="empty">${copy.lists.signInBreak}</li>`;
+          offBreakList.innerHTML = `<li class="empty">${copy.lists.signInBreak}</li>`;
+          onMealBreakList.innerHTML = `<li class="empty">${copy.lists.signInMeal}</li>`;
+          offMealBreakList.innerHTML = `<li class="empty">${copy.lists.signInMeal}</li>`;
           updateActionButtons();
           syncRoleUI();
           return;
         }
 
         if (!currentGroupId) {
-          const awaiting = "Waiting for a group assignment.";
+          const awaiting = copy.lists.awaitingGroup;
           onBreakList.innerHTML = `<li class="empty">${awaiting}</li>`;
           offBreakList.innerHTML = `<li class="empty">${awaiting}</li>`;
           onMealBreakList.innerHTML = `<li class="empty">${awaiting}</li>`;
@@ -1956,18 +2524,11 @@
           (a.email ?? "").localeCompare(b.email ?? "", undefined, { sensitivity: "base" })
         );
         const hasRosterEntries = rosterEntries.length > 0;
-        const onBreakEmptyText = hasRosterEntries
-          ? "Nobody is on break right now."
-          : "No one is assigned to this group yet.";
-        const workingEmptyText = hasRosterEntries
-          ? "Nobody is working right now."
-          : "No one is assigned to this group yet.";
-        const onMealEmptyText = hasRosterEntries
-          ? "Nobody is on meal break right now."
-          : "No one is assigned to this group yet.";
-        const offMealEmptyText = hasRosterEntries
-          ? "Everyone is on meal break."
-          : "No one is assigned to this group yet.";
+        const emptyFallback = copy.lists.noAssignments;
+        const onBreakEmptyText = hasRosterEntries ? copy.lists.nobodyOnBreak : emptyFallback;
+        const workingEmptyText = hasRosterEntries ? copy.lists.nobodyWorking : emptyFallback;
+        const onMealEmptyText = hasRosterEntries ? copy.lists.nobodyMeal : emptyFallback;
+        const offMealEmptyText = hasRosterEntries ? copy.lists.everyoneMeal : emptyFallback;
 
         populateList(onBreakList, onBreakSorted, onBreakEmptyText, {
           showJoinedAt: true,
@@ -1984,6 +2545,7 @@
 
       function renderAdminPanel() {
         if (!adminGroupsContainer) return;
+        const copy = getCopy();
         if (!isAdmin) {
           adminGroupsContainer.innerHTML = "";
           return;
@@ -1991,7 +2553,7 @@
 
         const groupIds = Object.keys(GROUPS);
         if (!groupIds.length) {
-          adminGroupsContainer.innerHTML = '<p class="muted">No groups configured.</p>';
+          adminGroupsContainer.innerHTML = `<p class="muted">${copy.admin.noGroups}</p>`;
           return;
         }
 
@@ -2011,18 +2573,11 @@
           const onMealEntries = roster.filter((entry) => isOnMealBreakToday(entry));
           const offMealEntries = roster.filter((entry) => !isOnMealBreakToday(entry));
           const hasRosterEntries = roster.length > 0;
-          const onBreakEmptyText = hasRosterEntries
-            ? "Nobody is on break right now."
-            : "No users in this group yet.";
-          const workingEmptyText = hasRosterEntries
-            ? "Nobody is working right now."
-            : "No users in this group yet.";
-          const onMealEmptyText = hasRosterEntries
-            ? "Nobody is on meal break right now."
-            : "No users in this group yet.";
-          const offMealEmptyText = hasRosterEntries
-            ? "Everyone is on meal break."
-            : "No users in this group yet.";
+          const emptyText = copy.admin.noUsers;
+          const onBreakEmptyText = hasRosterEntries ? copy.lists.nobodyOnBreak : emptyText;
+          const workingEmptyText = hasRosterEntries ? copy.lists.nobodyWorking : emptyText;
+          const onMealEmptyText = hasRosterEntries ? copy.lists.nobodyMeal : emptyText;
+          const offMealEmptyText = hasRosterEntries ? copy.lists.everyoneMeal : emptyText;
           const isMinimized = minimizedAdminGroups.has(groupId);
 
           const card = document.createElement("div");
@@ -2032,13 +2587,13 @@
           header.className = "admin-group-header";
 
           const title = document.createElement("h3");
-          title.textContent = `Group ${groupLabel(groupId)}`;
+          title.textContent = t("admin.groupLabel", { group: groupLabel(groupId) });
           header.appendChild(title);
 
           const toggleButton = document.createElement("button");
           toggleButton.type = "button";
           toggleButton.className = "ghost admin-toggle";
-          toggleButton.textContent = isMinimized ? "Expand" : "Collapse";
+          toggleButton.textContent = isMinimized ? copy.admin.expand : copy.admin.collapse;
           toggleButton.setAttribute("aria-pressed", String(isMinimized));
           toggleButton.setAttribute("aria-expanded", String(!isMinimized));
           const expandedCount = groupIds.length - minimizedAdminGroups.size;
@@ -2064,7 +2619,7 @@
 
           const onLabel = document.createElement("p");
           onLabel.className = "eyebrow";
-          onLabel.textContent = "On break";
+          onLabel.textContent = copy.lists.onBreak;
           body.appendChild(onLabel);
 
           const onList = document.createElement("ul");
@@ -2081,7 +2636,7 @@
 
           const offLabel = document.createElement("p");
           offLabel.className = "eyebrow";
-          offLabel.textContent = "Working";
+          offLabel.textContent = copy.lists.working;
           body.appendChild(offLabel);
 
           const offList = document.createElement("ul");
@@ -2098,7 +2653,7 @@
 
           const onMealLabel = document.createElement("p");
           onMealLabel.className = "eyebrow";
-          onMealLabel.textContent = "On meal break";
+          onMealLabel.textContent = copy.lists.onMealBreak;
           body.appendChild(onMealLabel);
 
           const onMealList = document.createElement("ul");
@@ -2118,7 +2673,7 @@
 
           const offMealLabel = document.createElement("p");
           offMealLabel.className = "eyebrow";
-          offMealLabel.textContent = "Not on meal break";
+          offMealLabel.textContent = copy.lists.offMealBreak;
           body.appendChild(offMealLabel);
 
           const offMealList = document.createElement("ul");
@@ -2157,12 +2712,14 @@
 
       function renderLogGroupSelector() {
         if (!logGroupSelect) return;
+        const copy = getCopy();
         const groupIds = Object.keys(GROUPS);
         if (!groupIds.length) {
-          logGroupSelect.innerHTML = '<p class="muted">No groups configured.</p>';
+          logGroupSelect.innerHTML = `<p class="muted">${copy.admin.noGroups}</p>`;
           syncLogResetButtons();
           return;
         }
+        logGroupSelect.setAttribute("aria-label", copy.admin.selectGroupsLabel);
         [...selectedLogGroups].forEach((groupId) => {
           if (!isValidGroupId(groupId)) {
             selectedLogGroups.delete(groupId);
@@ -2188,7 +2745,7 @@
           labelEl.appendChild(input);
 
           const text = document.createElement("span");
-          text.textContent = `Group ${groupLabel(groupId)}`;
+          text.textContent = t("admin.groupLabel", { group: groupLabel(groupId) });
           labelEl.appendChild(text);
           fragment.appendChild(labelEl);
         });
@@ -2198,13 +2755,14 @@
 
       function renderStaffLogs() {
         if (!logTable) return;
+        const copy = getCopy();
         if (!isAdmin) {
           logTable.innerHTML = "";
           return;
         }
         const groupIds = Object.keys(GROUPS);
         if (!groupIds.length) {
-          logTable.innerHTML = '<p class="muted">No groups configured.</p>';
+          logTable.innerHTML = `<p class="muted">${copy.admin.noGroups}</p>`;
           return;
         }
         [...collapsedLogGroups].forEach((groupId) => {
@@ -2231,13 +2789,13 @@
           header.className = "log-card-header";
 
           const title = document.createElement("h3");
-          title.textContent = `Group ${groupLabel(groupId)}`;
+          title.textContent = t("admin.groupLabel", { group: groupLabel(groupId) });
           header.appendChild(title);
 
           const toggle = document.createElement("button");
           toggle.type = "button";
           toggle.className = "ghost admin-toggle";
-          toggle.textContent = isCollapsed ? "Expand" : "Collapse";
+          toggle.textContent = isCollapsed ? copy.admin.expand : copy.admin.collapse;
           const expandedCount = groupIds.length - collapsedLogGroups.size;
           toggle.disabled = !isCollapsed && expandedCount <= 1;
           toggle.setAttribute("aria-pressed", String(isCollapsed));
@@ -2259,7 +2817,7 @@
           if (!roster.length) {
             const empty = document.createElement("p");
             empty.className = "log-empty";
-            empty.textContent = "No users in this group yet.";
+            empty.textContent = copy.admin.noUsers;
             body.appendChild(empty);
             card.appendChild(body);
             fragment.appendChild(card);
@@ -2268,8 +2826,14 @@
 
           const table = document.createElement("table");
           const thead = document.createElement("thead");
-          thead.innerHTML =
-            "<tr><th>Worker</th><th>Role</th><th>Breaks</th><th>Time on break</th><th>Time on meal break</th><th>Last break</th></tr>";
+          thead.innerHTML = `<tr>
+            <th>${copy.logTable.worker}</th>
+            <th>${copy.logTable.role}</th>
+            <th>${copy.logTable.breaks}</th>
+            <th>${copy.logTable.timeOnBreak}</th>
+            <th>${copy.logTable.timeOnMeal}</th>
+            <th>${copy.logTable.lastBreak}</th>
+          </tr>`;
           table.appendChild(thead);
 
           const tbody = document.createElement("tbody");
@@ -2292,33 +2856,33 @@
             const lastBreak = entry.lastBreakAt ?? null;
             const row = document.createElement("tr");
             const workerCell = document.createElement("td");
-            workerCell.textContent = entry.fullName ?? entry.email ?? "Unknown worker";
-            workerCell.dataset.label = "Worker";
+            workerCell.textContent = entry.fullName ?? entry.email ?? t("persons.unknown");
+            workerCell.dataset.label = copy.logTable.worker;
             row.appendChild(workerCell);
 
             const roleCell = document.createElement("td");
-            roleCell.textContent = roleLabel(entry.role) || "No role set";
-            roleCell.dataset.label = "Role";
+            roleCell.textContent = roleLabel(entry.role) || t("persons.roleNotSet");
+            roleCell.dataset.label = copy.logTable.role;
             row.appendChild(roleCell);
 
             const countCell = document.createElement("td");
             countCell.textContent = String(stats.breakCount ?? 0);
-            countCell.dataset.label = "Breaks";
+            countCell.dataset.label = copy.logTable.breaks;
             row.appendChild(countCell);
 
             const timeCell = document.createElement("td");
             timeCell.textContent = formatDuration(totalMs);
-            timeCell.dataset.label = "Time on break";
+            timeCell.dataset.label = copy.logTable.timeOnBreak;
             row.appendChild(timeCell);
 
             const mealTimeCell = document.createElement("td");
             mealTimeCell.textContent = formatDuration(mealTotalMs);
-            mealTimeCell.dataset.label = "Time on meal break";
+            mealTimeCell.dataset.label = copy.logTable.timeOnMeal;
             row.appendChild(mealTimeCell);
 
             const lastBreakCell = document.createElement("td");
             lastBreakCell.textContent = formatRelativeTime(lastBreak);
-            lastBreakCell.dataset.label = "Last break";
+            lastBreakCell.dataset.label = copy.logTable.lastBreak;
             row.appendChild(lastBreakCell);
 
             tbody.appendChild(row);
@@ -2351,15 +2915,14 @@
 
       async function resetLogsForGroups(groupIds) {
         if (!groupIds.length || !isAdmin) return;
+        const copy = getCopy();
         isResettingLogs = true;
         syncLogResetButtons();
         const label =
           groupIds.length === Object.keys(GROUPS).length
-            ? "all groups"
-            : `group${groupIds.length > 1 ? "s" : ""} ${groupIds
-                .map((groupId) => groupLabel(groupId))
-                .join(", ")}`;
-        setLogMessage(`Resetting logs for ${label}…`);
+            ? copy.admin.allGroups
+            : groupIds.map((groupId) => t("admin.groupLabel", { group: groupLabel(groupId) })).join(", ");
+        setLogMessage(t("messages.resettingLogs", { label }));
         try {
           for (const groupId of groupIds) {
             const rosterRef = collection(db, "groups", groupId, "busRoster");
@@ -2389,10 +2952,10 @@
               await batch.commit();
             }
           }
-          setLogMessage(`Logs reset for ${label}.`);
+          setLogMessage(t("messages.logsReset", { label }));
         } catch (error) {
           console.error("Log reset failed", error);
-          setLogMessage("Unable to reset logs. Try again.", true);
+          setLogMessage(t("messages.resetLogsFailed"), true);
         } finally {
           isResettingLogs = false;
           clearResetConfirmation(resetAllLogsButton);
@@ -2514,7 +3077,7 @@
           syncRoleUI(selfEntry);
         } catch (error) {
           console.error("Unable to prepare roster entry", error);
-          setRosterMessage("Unable to prepare your roster slot.", true);
+          setRosterMessage(t("messages.rosterSlotIssue"), true);
         }
       }
 
@@ -2537,7 +3100,7 @@
           },
           (error) => {
             console.error("Roster listener error", error);
-            setRosterMessage("Live roster updates paused. Refresh the page.", true);
+            setRosterMessage(t("messages.rosterPaused"), true);
           }
         );
       }
@@ -2561,13 +3124,13 @@
           (snapshot) => {
             handleGroupSnapshot(snapshot).catch((error) => {
               console.error("Group handling failed", error);
-              setGroupMessage("Unable to load your group.", true);
+              setGroupMessage(t("messages.loadGroupError"), true);
             });
           },
           (error) => {
             console.error("Group listener error", error);
             currentGroupId = null;
-            setGroupMessage("Unable to load your group.", true);
+            setGroupMessage(t("messages.loadGroupError"), true);
             stopRosterSubscription();
             updateActionButtons();
             syncInfoCardVisibility();
@@ -2586,11 +3149,11 @@
         if (!currentUser) return;
         if (!snapshot.exists()) {
           currentGroupId = null;
-          setGroupMessage("No group assigned. Contact the owner.", true);
+          setGroupMessage(t("messages.noGroupAssigned"), true);
           stopRosterSubscription();
           updateActionButtons();
           setRoleControlsDisabled(true);
-          setRoleMessage("Role selection will be available after you get a group.", true);
+          setRoleMessage(t("messages.roleAfterGroup"), true);
           syncRoleUI();
           syncInfoCardVisibility();
           return;
@@ -2599,22 +3162,22 @@
         const groupId = data.groupId;
         if (!isValidGroupId(groupId)) {
           currentGroupId = null;
-          setGroupMessage("Invalid group assignment. Contact the owner.", true);
+          setGroupMessage(t("messages.invalidGroup"), true);
           stopRosterSubscription();
           updateActionButtons();
           setRoleControlsDisabled(true);
-          setRoleMessage("Role selection will be available after you get a valid group.", true);
+          setRoleMessage(t("messages.roleAfterValidGroup"), true);
           syncRoleUI();
           syncInfoCardVisibility();
           return;
         }
         if (groupId === currentGroupId) {
-          setGroupMessage(`Group: ${groupLabel(groupId)}`);
+          setGroupMessage(t("dashboard.groupLabel", { group: groupLabel(groupId) }));
           syncInfoCardVisibility();
           return;
         }
         currentGroupId = groupId;
-        setGroupMessage(`Group: ${groupLabel(groupId)}`);
+        setGroupMessage(t("dashboard.groupLabel", { group: groupLabel(groupId) }));
         setRosterMessage("");
         setRoleMessage("");
         setRoleControlsDisabled(false);
@@ -2627,18 +3190,18 @@
       async function updateBreakStatus(targetState) {
         if (!currentUser || !currentGroupId || isRosterMutating) {
           if (!currentGroupId) {
-            setRosterMessage("You need a group before updating break status.", true);
+            setRosterMessage(t("messages.needGroupBreak"), true);
           }
           return;
         }
         const currentEntry =
           rosterEntries.find((entry) => entry.id === currentUser.uid) ?? selfEntry ?? {};
         if (!sanitizeRoleId(currentEntry.role)) {
-          setRoleMessage("Select your role before updating your break.", true);
+          setRoleMessage(t("messages.selectRoleFirst"), true);
           return;
         }
         if (targetState && isOnMealBreakToday(currentEntry)) {
-          setRosterMessage("End your meal break first.", true);
+          setRosterMessage(t("messages.endMealFirst"), true);
           return;
         }
         const stats = getBreakStatsForToday(currentEntry);
@@ -2650,7 +3213,7 @@
         const lastBreakAt = !startingBreak && currentlyOnBreak ? new Date() : currentEntry.lastBreakAt ?? null;
         isRosterMutating = true;
         updateActionButtons();
-        setRosterMessage(startingBreak ? "Starting your break…" : "Ending your break…");
+        setRosterMessage(startingBreak ? t("messages.startingBreak") : t("messages.endingBreak"));
 
         const fullName = getCurrentFullName() || currentUser.email;
         if (startingBreak) {
@@ -2706,10 +3269,10 @@
             },
             { merge: true }
           );
-          setRosterMessage(targetState ? "You are on break." : "You are back from break.");
+          setRosterMessage(targetState ? t("messages.onBreak") : t("messages.backFromBreak"));
         } catch (error) {
           console.error("Roster update failed", error);
-          setRosterMessage("Update failed. Please try again.", true);
+          setRosterMessage(t("messages.breakUpdateFailed"), true);
         } finally {
           isRosterMutating = false;
           updateActionButtons();
@@ -2719,18 +3282,18 @@
       async function updateMealBreakStatus(targetState) {
         if (!currentUser || !currentGroupId || isRosterMutating) {
           if (!currentGroupId) {
-            setRosterMessage("You need a group before updating meal break status.", true);
+            setRosterMessage(t("messages.needGroupMeal"), true);
           }
           return;
         }
         const currentEntry =
           rosterEntries.find((entry) => entry.id === currentUser.uid) ?? selfEntry ?? {};
         if (!sanitizeRoleId(currentEntry.role)) {
-          setRoleMessage("Select your role before updating your break.", true);
+          setRoleMessage(t("messages.selectRoleFirst"), true);
           return;
         }
         if (targetState && isOnBreakToday(currentEntry)) {
-          setRosterMessage("End your regular break first.", true);
+          setRosterMessage(t("messages.endBreakFirst"), true);
           return;
         }
         const stats = getBreakStatsForToday(currentEntry);
@@ -2745,7 +3308,7 @@
             : currentEntry.lastBreakAt ?? null;
         isRosterMutating = true;
         updateActionButtons();
-        setRosterMessage(targetState ? "Starting your meal break…" : "Ending your meal break…");
+        setRosterMessage(targetState ? t("messages.startingMeal") : t("messages.endingMeal"));
 
         if (startingMealBreak) {
           if (!currentlyOnMealBreak) {
@@ -2801,12 +3364,10 @@
             },
             { merge: true }
           );
-          setRosterMessage(
-            targetState ? "You are on meal break." : "You are back from your meal break."
-          );
+          setRosterMessage(targetState ? t("messages.onMeal") : t("messages.backFromMeal"));
         } catch (error) {
           console.error("Meal break update failed", error);
-          setRosterMessage("Meal break update failed. Please try again.", true);
+          setRosterMessage(t("messages.mealUpdateFailed"), true);
         } finally {
           isRosterMutating = false;
           updateActionButtons();
@@ -2816,18 +3377,18 @@
       async function updateRoleSelection() {
         if (!roleSelect) return;
         if (!currentUser) {
-          setRoleMessage("Sign in to set your role.", true);
+          setRoleMessage(t("messages.signInSetRole"), true);
           return;
         }
         if (!currentGroupId) {
-          setRoleMessage("Wait for your group assignment first.", true);
+          setRoleMessage(t("messages.waitForGroup"), true);
           return;
         }
         if (isRoleUpdating) return;
         const selectedRole = sanitizeRoleId(roleSelect?.value);
         isRoleUpdating = true;
         setRoleControlsDisabled(true);
-        setRoleMessage(selectedRole ? "Updating your role…" : "Clearing your role…");
+        setRoleMessage(selectedRole ? t("messages.updatingRole") : t("messages.clearingRole"));
 
         const currentEntry =
           rosterEntries.find((entry) => entry.id === currentUser.uid) ?? selfEntry ?? {};
@@ -2878,10 +3439,10 @@
             },
             { merge: true }
           );
-          setRoleMessage(selectedRole ? "Role updated." : "Role cleared.");
+          setRoleMessage(selectedRole ? t("messages.roleUpdated") : t("messages.roleCleared"));
         } catch (error) {
           console.error("Role update failed", error);
-          setRoleMessage("Unable to update your role. Try again.", true);
+          setRoleMessage(t("messages.roleUpdateFailed"), true);
         } finally {
           isRoleUpdating = false;
           setRoleControlsDisabled(!currentUser || !currentGroupId);
@@ -2901,8 +3462,13 @@
         button.addEventListener("click", () => setAuthMode(button.dataset.authMode));
       });
 
-      setAuthMode("signin");
-      populateRoleSelect();
+      if (languageSelect) {
+        languageSelect.addEventListener("change", (event) =>
+          setLanguage(event.target.value, { persist: true })
+        );
+      }
+
+      applyLanguage();
 
       emailInput.addEventListener("blur", attemptFullNamePrefill);
       emailInput.addEventListener("change", attemptFullNamePrefill);
@@ -2925,17 +3491,17 @@
         const password = passwordInput.value.trim();
 
         if (!email) {
-          setAuthMessage("Enter an email address.", true);
+          setAuthMessage(t("messages.emailRequired"), true);
           return;
         }
 
         if (!password) {
-          setAuthMessage("Enter a password.", true);
+          setAuthMessage(t("messages.passwordRequired"), true);
           return;
         }
 
         if (isRegister && !fullName) {
-          setAuthMessage("Enter your full name.", true);
+          setAuthMessage(t("messages.fullNameRequired"), true);
           return;
         }
 
@@ -2948,19 +3514,19 @@
 
         try {
           if (isRegister) {
-            setAuthMessage("Creating your account…");
+            setAuthMessage(t("messages.creatingAccount"));
             await createUserWithEmailAndPassword(auth, email, password);
-            setAuthMessage("Account created. Signing you in…");
+            setAuthMessage(t("messages.accountCreated"));
           } else {
-            setAuthMessage("Signing you in…");
+            setAuthMessage(t("messages.signingIn"));
             await signInWithEmailAndPassword(auth, email, password);
-            setAuthMessage("Signed in.");
+            setAuthMessage(t("messages.signedIn"));
           }
         } catch (error) {
           const friendly =
             typeof error?.code === "string"
               ? error.code.replace("auth/", "").replace(/-/g, " ")
-              : "Something went wrong. Try again.";
+              : t("messages.authErrorFallback");
           setAuthMessage(friendly, true);
           pendingIdentity = null;
         }
@@ -2980,9 +3546,9 @@
       signOutButton.addEventListener("click", async () => {
         try {
           await signOut(auth);
-          setAuthMessage("Signed out.");
+          setAuthMessage(t("messages.signedOut"));
         } catch {
-          setAuthMessage("Unable to sign out. Try again.", true);
+          setAuthMessage(t("messages.signOutError"), true);
         }
       });
       if (adminSignOutButton) {
@@ -2993,7 +3559,7 @@
           if (!isAdmin || isResettingLogs) return;
           const confirmed = requestResetConfirmation(
             resetAllLogsButton,
-            "Click again to reset all logs"
+            t("admin.resetAllConfirm")
           );
           if (confirmed) {
             resetLogsForGroups(Object.keys(GROUPS));
@@ -3005,7 +3571,7 @@
           if (!isAdmin || isResettingLogs || selectedLogGroups.size === 0) return;
           const confirmed = requestResetConfirmation(
             resetSelectedLogsButton,
-            "Click again to reset selected"
+            t("admin.resetSelectedConfirm")
           );
           if (confirmed) {
             resetLogsForGroups([...selectedLogGroups]);
@@ -3021,32 +3587,41 @@
         if (user) {
           userEmailEl.textContent = user.email;
           setRosterMessage("");
-          setGroupMessage(adminStatus ? "Break overview" : "Looking up your group…");
-          setRoleMessage(adminStatus ? "" : "Choose where you're working today.");
+          setGroupMessage(adminStatus ? t("messages.breakOverview") : t("dashboard.lookingUpGroup"));
+          setRoleMessage(adminStatus ? "" : t("dashboard.chooseRolePrompt"));
           setRoleControlsDisabled(true);
           try {
             if (pendingIdentity && pendingIdentity.email === user.email) {
               await saveProfileFullName(user, pendingIdentity.fullName);
               rememberFullName(user.email, pendingIdentity.fullName);
-            } else {
-              const profile = await fetchProfile(user);
-              currentProfile = profile?.fullName
-                ? { fullName: sanitizeFullName(profile.fullName) }
-                : { fullName: "" };
-              if (!currentProfile.fullName) {
-                const suggestion = recallFullName(user.email);
-                if (suggestion) {
-                  currentProfile.fullName = suggestion;
-                  rememberFullName(user.email, suggestion);
-                } else {
-                  setAuthMessage("Add your full name when signing in next time.", true);
-                }
-              } else {
-                rememberFullName(user.email, currentProfile.fullName);
-              }
             }
-          } catch {
-            setAuthMessage("Unable to sync your full name. Try again.", true);
+
+            const profile = await fetchProfile(user);
+            const profileFullName = profile?.fullName ? sanitizeFullName(profile.fullName) : "";
+            const profileLanguage = isValidLanguage(profile?.language) ? profile.language : null;
+            currentProfile = { fullName: profileFullName, language: profileLanguage };
+
+            if (!currentProfile.fullName) {
+              const suggestion = recallFullName(user.email);
+              if (suggestion) {
+                currentProfile.fullName = suggestion;
+                rememberFullName(user.email, suggestion);
+              } else if (!pendingIdentity) {
+                setAuthMessage(t("messages.addFullNameLater"), true);
+              }
+            } else {
+              rememberFullName(user.email, currentProfile.fullName);
+            }
+
+            if (profileLanguage) {
+              setLanguage(profileLanguage, { persist: false });
+            } else {
+              currentProfile.language = currentLanguage;
+              persistLanguagePreference(user, currentLanguage);
+            }
+          } catch (error) {
+            console.error("Profile sync failed", error);
+            setAuthMessage(t("messages.syncFullNameFailed"), true);
           } finally {
             pendingIdentity = null;
           }
@@ -3066,7 +3641,7 @@
           setGroupMessage("");
           setRoleMessage("");
           currentGroupId = null;
-          currentProfile = { fullName: "" };
+          currentProfile = { fullName: "", language: null };
           pendingIdentity = null;
           stopGroupWatcher();
           stopRosterSubscription();
