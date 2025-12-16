@@ -1115,12 +1115,25 @@
           </div>
           <div class="logs-footer">
             <div class="logs-actions">
-              <div class="log-group-select" id="log-group-select" aria-label="Select groups to reset">
-                <p class="muted">Loading groups…</p>
+            <div class="log-group-select" id="log-group-select" aria-label="Select groups to reset">
+              <p class="muted">Loading groups…</p>
+            </div>
+            <div class="log-reset-actions">
+              <div class="log-group-select" id="log-export-scope">
+                <label class="log-option">
+                  <input type="radio" name="export-scope" value="all" checked />
+                  <span>All groups</span>
+                </label>
+                <label class="log-option">
+                  <input type="radio" name="export-scope" value="selected" />
+                  <span>Selected groups</span>
+                </label>
               </div>
-              <div class="log-reset-actions">
-                <button class="ghost" type="button" id="reset-selected-logs" disabled>
-                  Reset selected groups
+              <button class="ghost" type="button" id="export-logs">
+                Export
+              </button>
+              <button class="ghost" type="button" id="reset-selected-logs" disabled>
+                Reset selected groups
                 </button>
                 <button type="button" id="reset-all-logs">Reset all</button>
               </div>
@@ -1271,12 +1284,15 @@
             loadingGroups: "Loading group data…",
             loadingLogs: "Loading logs…",
             logsHeading: "Break logs",
+            exportCsv: "Export",
             allGroups: "all groups",
             resetSelected: "Reset selected groups",
             resetAll: "Reset all",
             resetAllConfirm: "Click again to reset all logs",
             resetSelectedConfirm: "Click again to reset selected",
             groupLabel: "Group {group}",
+            exportScopeAll: "All groups",
+            exportScopeSelected: "Selected groups",
             noGroups: "No groups configured.",
             noUsers: "No users in this group yet.",
             collapse: "Collapse",
@@ -1350,6 +1366,9 @@
             resettingLogs: "Resetting logs for {label}…",
             logsReset: "Logs reset for {label}.",
             resetLogsFailed: "Unable to reset logs. Try again.",
+            exportNoData: "No logs to export yet.",
+            exportFailed: "Unable to export logs. Try again.",
+            exportReady: "CSV downloaded.",
             groupAwaiting: "Waiting for a group assignment.",
             authDefault: "Use your credentials to access the break list.",
             breakOverview: "Break overview",
@@ -1421,12 +1440,15 @@
             loadingGroups: "Grup verileri yükleniyor…",
             loadingLogs: "Kayıtlar yükleniyor…",
             logsHeading: "Mola kayıtları",
+            exportCsv: "Dışa aktar",
             allGroups: "tüm gruplar",
             resetSelected: "Seçili grupları sıfırla",
             resetAll: "Tümünü sıfırla",
             resetAllConfirm: "Tüm kayıtları sıfırlamak için tekrar tıklayın",
             resetSelectedConfirm: "Seçilileri sıfırlamak için tekrar tıklayın",
             groupLabel: "Grup {group}",
+            exportScopeAll: "Tüm gruplar",
+            exportScopeSelected: "Seçili gruplar",
             noGroups: "Henüz tanımlı grup yok.",
             noUsers: "Bu grupta henüz kullanıcı yok.",
             collapse: "Daralt",
@@ -1500,6 +1522,9 @@
             resettingLogs: "{label} için kayıtlar sıfırlanıyor…",
             logsReset: "{label} için kayıtlar sıfırlandı.",
             resetLogsFailed: "Kayıtlar sıfırlanamadı. Tekrar deneyin.",
+            exportNoData: "Dışa aktarılacak kayıt yok.",
+            exportFailed: "Kayıtlar dışa aktarılamadı. Tekrar deneyin.",
+            exportReady: "CSV indirildi.",
             groupAwaiting: "Grup ataması bekleniyor.",
             authDefault: "Mola listesine erişmek için bilgilerinizi girin.",
             breakOverview: "Mola genel görünümü",
@@ -1711,6 +1736,8 @@
       const logTable = document.getElementById("log-table");
       const logsMessage = document.getElementById("logs-message");
       const logGroupSelect = document.getElementById("log-group-select");
+      const logExportScope = document.getElementById("log-export-scope");
+      const exportLogsButton = document.getElementById("export-logs");
       const resetSelectedLogsButton = document.getElementById("reset-selected-logs");
       const resetAllLogsButton = document.getElementById("reset-all-logs");
       const logCollapseButton = document.getElementById("log-collapse-btn");
@@ -1744,6 +1771,7 @@
       const ADMIN_LAYOUT_STORAGE_PREFIX = "adminGroupLayout";
       const LOG_LAYOUT_STORAGE_PREFIX = "logGroupLayout";
       const selectedLogGroups = new Set();
+      let exportScopeMode = "all";
       let isResettingLogs = false;
       let logRefreshTimer = null;
       const LOG_REFRESH_INTERVAL_MS = 60_000;
@@ -1751,6 +1779,7 @@
       const resetConfirmTimers = new Map();
       let logsCollapsed = false;
       const collapsedLogGroups = new Set();
+      const CSV_SEPARATOR = ";";
 
       function getCopy() {
         return COPY[currentLanguage] || COPY.en;
@@ -1850,6 +1879,15 @@
         if (resetAllLogsButton) {
           resetAllLogsButton.textContent = copy.admin.resetAll;
           resetAllLogsButton.dataset.defaultLabel = copy.admin.resetAll;
+        }
+        if (exportLogsButton) {
+          exportLogsButton.textContent = copy.admin.exportCsv;
+        }
+        if (logExportScope) {
+          const allLabel = logExportScope.querySelector('input[value="all"]')?.nextElementSibling;
+          const selectedLabel = logExportScope.querySelector('input[value="selected"]')?.nextElementSibling;
+          if (allLabel) allLabel.textContent = copy.admin.exportScopeAll;
+          if (selectedLabel) selectedLabel.textContent = copy.admin.exportScopeSelected;
         }
         if (logGroupSelect) logGroupSelect.setAttribute("aria-label", copy.admin.selectGroupsLabel);
         if (infoEyebrow) infoEyebrow.textContent = copy.info.eyebrow;
@@ -1977,6 +2015,13 @@
         }
         saveLogLayout();
         renderStaffLogs();
+      }
+
+      function hasAnyLogData(groupIds = Object.keys(GROUPS)) {
+        return groupIds.some((groupId) => {
+          const roster = adminRosterData.get(groupId) ?? [];
+          return Array.isArray(roster) && roster.length > 0;
+        });
       }
 
       function renderDepartmentDetails() {
@@ -2127,6 +2172,7 @@
           setLogsCollapsed(false);
         }
         syncInfoCardVisibility();
+        syncLogResetButtons();
       }
 
       function setPasswordVisibility(visible) {
@@ -2385,6 +2431,16 @@
         if (hours && minutes) return `${hours}${hourLabel} ${minutes}${minuteLabel}`;
         if (hours) return `${hours}${hourLabel}`;
         return `${minutes}${minuteLabel}`;
+      }
+
+      function formatCsvValue(value, separator = CSV_SEPARATOR) {
+        if (value === null || value === undefined) return "";
+        const text = String(value);
+        const needsEscaping = new RegExp(`[\"\\n${separator}]`).test(text);
+        if (needsEscaping) {
+          return `"${text.replace(/"/g, '""')}"`;
+        }
+        return text;
       }
 
       function formatRelativeTime(value) {
@@ -2806,6 +2862,15 @@
             clearResetConfirmation(resetAllLogsButton);
           }
         }
+        if (exportLogsButton) {
+          const targetGroups =
+            exportScopeMode === "selected" && selectedLogGroups.size > 0
+              ? [...selectedLogGroups].filter((groupId) => isValidGroupId(groupId))
+              : Object.keys(GROUPS);
+          const missingSelection = exportScopeMode === "selected" && selectedLogGroups.size === 0;
+          const disabled = !isAdmin || missingSelection || !hasAnyLogData(targetGroups);
+          exportLogsButton.disabled = disabled;
+        }
       }
 
       function renderLogGroupSelector() {
@@ -2851,16 +2916,106 @@
         syncLogResetButtons();
       }
 
+      function setupExportScopeControls() {
+        if (!logExportScope) return;
+        const inputs = logExportScope.querySelectorAll('input[name="export-scope"]');
+        inputs.forEach((input) => {
+          input.addEventListener("change", () => {
+            exportScopeMode = input.value === "selected" ? "selected" : "all";
+            syncLogResetButtons();
+          });
+        });
+      }
+
+      function buildLogExportRows(groupIds) {
+        const rows = [];
+        groupIds.forEach((groupId) => {
+          const roster = adminRosterData.get(groupId) ?? [];
+          roster.forEach((entry) => {
+            const stats = getBreakStatsForToday(entry);
+            rows.push([
+              entry.fullName ?? entry.email ?? "",
+              roleLabel(entry.role) || t("persons.roleNotSet"),
+              stats.breakCount ?? 0,
+              formatDuration(stats.breakDurationMs + currentBreakElapsed(entry)),
+              formatDuration(stats.mealBreakDurationMs + currentMealBreakElapsed(entry)),
+              formatRelativeTime(entry.lastBreakAt ?? null),
+            ]);
+          });
+        });
+        return rows;
+      }
+
+      function downloadCsv(content, filename) {
+        if (!content) return;
+        try {
+          const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+        } catch (error) {
+          console.error("CSV download failed", error);
+          throw error;
+        }
+      }
+
+      function exportLogsToCsv() {
+        if (!isAdmin) return;
+        const targetGroups =
+          exportScopeMode === "selected" && selectedLogGroups.size > 0
+            ? [...selectedLogGroups].filter((groupId) => isValidGroupId(groupId))
+            : Object.keys(GROUPS);
+        if (!targetGroups.length) {
+          setLogMessage(t("admin.noGroups"), true);
+          return;
+        }
+        if (!hasAnyLogData(targetGroups)) {
+          setLogMessage(t("messages.exportNoData"), true);
+          return;
+        }
+        const headers = [
+          t("logTable.worker"),
+          t("logTable.role"),
+          t("logTable.breaks"),
+          t("logTable.timeOnBreak"),
+          t("logTable.timeOnMeal"),
+          t("logTable.lastBreak"),
+        ];
+        const rows = buildLogExportRows(targetGroups);
+        if (!rows.length) {
+          setLogMessage(t("messages.exportNoData"), true);
+          return;
+        }
+        const csvLines = [headers, ...rows].map((row) =>
+          row.map((cell) => formatCsvValue(cell)).join(CSV_SEPARATOR)
+        );
+        try {
+          const csvContent = `\ufeff${csvLines.join("\r\n")}`;
+          downloadCsv(csvContent, `break-logs-${currentResetDateKey()}.csv`);
+          setLogMessage(t("messages.exportReady"));
+        } catch (error) {
+          console.error("Log export failed", error);
+          setLogMessage(t("messages.exportFailed"), true);
+        }
+      }
+
       function renderStaffLogs() {
         if (!logTable) return;
         const copy = getCopy();
         if (!isAdmin) {
           logTable.innerHTML = "";
+          syncLogResetButtons();
           return;
         }
         const groupIds = Object.keys(GROUPS);
         if (!groupIds.length) {
           logTable.innerHTML = `<p class="muted">${copy.admin.noGroups}</p>`;
+          syncLogResetButtons();
           return;
         }
         [...collapsedLogGroups].forEach((groupId) => {
@@ -2994,6 +3149,7 @@
         logTable.replaceChildren(fragment);
         logTable.classList.toggle("hidden", logsCollapsed);
         syncLogCollapseButtons();
+        syncLogResetButtons();
       }
 
       function startLogTicker() {
@@ -3652,6 +3808,9 @@
       if (adminSignOutButton) {
         adminSignOutButton.addEventListener("click", () => signOutButton.click());
       }
+      if (exportLogsButton) {
+        exportLogsButton.addEventListener("click", () => exportLogsToCsv());
+      }
       if (resetAllLogsButton) {
         resetAllLogsButton.addEventListener("click", () => {
           if (!isAdmin || isResettingLogs) return;
@@ -3757,6 +3916,7 @@
 
       renderWorkInfo();
       renderLists();
+      setupExportScopeControls();
     </script>
   </body>
 </html>
