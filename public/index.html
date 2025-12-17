@@ -404,6 +404,19 @@
         gap: 0.15rem;
       }
 
+      .info-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .info-toggle {
+        padding: 0.45rem 0.9rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+      }
+
       .info-heading h2,
       .user-email {
         margin: 0;
@@ -453,7 +466,7 @@
       .info-item {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.75rem;
         padding: 1rem;
         border-radius: 16px;
         background: var(--surface);
@@ -488,21 +501,25 @@
         gap: 0.5rem;
       }
 
+      #work-info.faqs-collapsed .dept-faq {
+        display: none;
+      }
+
       .faq-row {
         border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 0.65rem 0.75rem;
-        background: var(--bg);
+        padding: 0.9rem 1rem;
+        background: var(--card);
         box-shadow: none;
       }
 
       .faq-question {
-        font-weight: 700;
+        font-weight: 600;
         margin: 0;
       }
 
       .faq-answer {
-        margin: 0.2rem 0 0;
+        margin: 0.15rem 0 0;
         color: var(--subtle);
       }
 
@@ -647,6 +664,31 @@
         gap: 1rem;
       }
 
+      .admin-groups.focus-mode {
+        gap: 0.65rem;
+      }
+
+      .group-chip-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding: 0.15rem 0.05rem;
+      }
+
+      .group-chip {
+        padding: 0.35rem 0.9rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        flex: 0 0 auto;
+      }
+
+      .group-chip.active {
+        background: var(--accent);
+        color: var(--bg);
+        border-color: var(--accent);
+      }
+
       .admin-group-card {
         border: 1px solid var(--border);
         border-radius: 16px;
@@ -789,6 +831,10 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         gap: 1rem;
+      }
+
+      .log-table.focus-mode {
+        gap: 0.65rem;
       }
 
       .log-card {
@@ -1168,7 +1214,19 @@
       <section class="card info-card" id="work-info">
         <div class="info-heading">
           <p class="eyebrow" id="info-eyebrow">Ops guide</p>
-          <h2 id="info-title">Departments & FAQs</h2>
+          <div class="info-title-row">
+            <h2 id="info-title">Departments & FAQs</h2>
+            <button
+              class="ghost info-toggle"
+              type="button"
+              id="info-faq-toggle"
+              aria-controls="department-list"
+              aria-pressed="false"
+              aria-expanded="true"
+            >
+              Collapse
+            </button>
+          </div>
         </div>
         <div class="info-grid">
           <div class="info-section departments-section">
@@ -1308,6 +1366,7 @@
             logsHeading: "Break logs",
             exportCsv: "Export",
             allGroups: "all groups",
+            showAll: "Show all",
             resetSelected: "Reset selected groups",
             resetAll: "Reset all",
             resetAllConfirm: "Click again to reset all logs",
@@ -1327,6 +1386,10 @@
             mealTitle: "Day / night meal breaks",
             shift: "Shift",
             meal: "Meal break",
+            collapse: "Collapse",
+            expand: "Expand",
+            collapseFaqsLabel: "Collapse all FAQs",
+            expandFaqsLabel: "Expand all FAQs",
           },
           footer: {
             note: "Choose your preferred language.",
@@ -1464,6 +1527,7 @@
             logsHeading: "Mola kayıtları",
             exportCsv: "Dışa aktar",
             allGroups: "tüm gruplar",
+            showAll: "Tümünü göster",
             resetSelected: "Seçili grupları sıfırla",
             resetAll: "Tümünü sıfırla",
             resetAllConfirm: "Tüm kayıtları sıfırlamak için tekrar tıklayın",
@@ -1483,6 +1547,10 @@
             mealTitle: "Gündüz / gece yemek araları",
             shift: "Vardiya",
             meal: "Yemek arası",
+            collapse: "Daralt",
+            expand: "Genişlet",
+            collapseFaqsLabel: "Tüm SSS'leri daralt",
+            expandFaqsLabel: "Tüm SSS'leri genişlet",
           },
           footer: {
             note: "Tercih ettiğiniz dili buradan seçin.",
@@ -1768,6 +1836,7 @@
       const mealShiftsBody = document.getElementById("meal-shifts");
       const infoEyebrow = document.getElementById("info-eyebrow");
       const infoTitle = document.getElementById("info-title");
+      const infoFaqToggleButton = document.getElementById("info-faq-toggle");
       const mealShiftTitle = document.getElementById("meal-shift-title");
       const mealShiftHeader = document.getElementById("meal-shift-header");
       const mealWindowHeader = document.getElementById("meal-window-header");
@@ -1802,6 +1871,14 @@
       let logsCollapsed = false;
       const collapsedLogGroups = new Set();
       const CSV_SEPARATOR = ";";
+      const INFO_FAQ_COLLAPSE_STORAGE_KEY = "infoFaqCollapsed";
+      let faqsCollapsed = false;
+
+      try {
+        faqsCollapsed = localStorage.getItem(INFO_FAQ_COLLAPSE_STORAGE_KEY) === "1";
+      } catch {
+        /* ignore storage issues */
+      }
 
       function getCopy() {
         return COPY[currentLanguage] || COPY.en;
@@ -1917,6 +1994,7 @@
         if (mealShiftTitle) mealShiftTitle.textContent = copy.info.mealTitle;
         if (mealShiftHeader) mealShiftHeader.textContent = copy.info.shift;
         if (mealWindowHeader) mealWindowHeader.textContent = copy.info.meal;
+        syncInfoFaqToggleButton();
         setAuthMode(authMode, { keepMessage: true, keepPasswordVisibility: true });
         populateRoleSelect();
         renderWorkInfo();
@@ -2026,6 +2104,38 @@
           logTable.classList.toggle("hidden", logsCollapsed);
         }
         syncLogCollapseButtons();
+      }
+
+      function syncInfoFaqToggleButton() {
+        if (!infoFaqToggleButton) return;
+        const copy = getCopy();
+        infoFaqToggleButton.textContent = faqsCollapsed ? copy.info.expand : copy.info.collapse;
+        infoFaqToggleButton.setAttribute("aria-pressed", String(faqsCollapsed));
+        infoFaqToggleButton.setAttribute("aria-expanded", String(!faqsCollapsed));
+        const label = faqsCollapsed ? copy.info.expandFaqsLabel : copy.info.collapseFaqsLabel;
+        if (label) {
+          infoFaqToggleButton.setAttribute("aria-label", label);
+          infoFaqToggleButton.title = label;
+        }
+      }
+
+      function saveFaqCollapseState(collapsed) {
+        try {
+          localStorage.setItem(INFO_FAQ_COLLAPSE_STORAGE_KEY, collapsed ? "1" : "0");
+        } catch {
+          /* ignore storage issues */
+        }
+      }
+
+      function setFaqsCollapsed(collapsed, { persist = true } = {}) {
+        faqsCollapsed = Boolean(collapsed);
+        if (infoCard) {
+          infoCard.classList.toggle("faqs-collapsed", faqsCollapsed);
+        }
+        if (persist) {
+          saveFaqCollapseState(faqsCollapsed);
+        }
+        syncInfoFaqToggleButton();
       }
 
       function setLogGroupCollapsed(groupId, collapsed) {
@@ -2724,12 +2834,14 @@
         const copy = getCopy();
         if (!isAdmin) {
           adminGroupsContainer.innerHTML = "";
+          adminGroupsContainer.classList.remove("focus-mode");
           return;
         }
 
         const groupIds = Object.keys(GROUPS);
         if (!groupIds.length) {
           adminGroupsContainer.innerHTML = `<p class="muted">${copy.admin.noGroups}</p>`;
+          adminGroupsContainer.classList.remove("focus-mode");
           return;
         }
 
@@ -2739,8 +2851,48 @@
 
         const expandedGroupIds = groupIds.filter((id) => !minimizedAdminGroups.has(id));
         const minimizedGroupIds = groupIds.filter((id) => minimizedAdminGroups.has(id));
-        const orderedGroupIds = [...expandedGroupIds, ...minimizedGroupIds];
+        const focusMode = expandedGroupIds.length === 1 && groupIds.length > 1;
+        adminGroupsContainer.classList.toggle("focus-mode", focusMode);
         const fragment = document.createDocumentFragment();
+        const selectedGroupId = focusMode ? expandedGroupIds[0] : null;
+        const row = document.createElement("div");
+        row.className = "group-chip-row";
+
+        const showAllButton = document.createElement("button");
+        showAllButton.type = "button";
+        showAllButton.className = `ghost group-chip${minimizedAdminGroups.size === 0 ? " active" : ""}`;
+        showAllButton.textContent = copy.admin.showAll || copy.admin.exportScopeAll;
+        showAllButton.setAttribute("aria-pressed", String(minimizedAdminGroups.size === 0));
+        showAllButton.addEventListener("click", () => {
+          if (minimizedAdminGroups.size === 0) return;
+          minimizedAdminGroups.clear();
+          renderAdminPanel();
+        });
+        row.appendChild(showAllButton);
+
+        groupIds.forEach((groupId) => {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = `ghost group-chip${groupId === selectedGroupId ? " active" : ""}`;
+          chip.textContent = t("admin.groupLabel", { group: groupLabel(groupId) });
+          chip.setAttribute("aria-pressed", String(groupId === selectedGroupId));
+          chip.addEventListener("click", () => {
+            if (focusMode && groupId === selectedGroupId) return;
+            minimizedAdminGroups.clear();
+            groupIds.forEach((id) => {
+              if (id !== groupId) minimizedAdminGroups.add(id);
+            });
+            renderAdminPanel();
+          });
+          row.appendChild(chip);
+        });
+
+        fragment.appendChild(row);
+
+        let orderedGroupIds = [...expandedGroupIds, ...minimizedGroupIds];
+        if (focusMode) {
+          orderedGroupIds = [selectedGroupId];
+        }
 
         orderedGroupIds.forEach((groupId) => {
           const roster = adminRosterData.get(groupId) ?? [];
@@ -3039,12 +3191,14 @@
         const copy = getCopy();
         if (!isAdmin) {
           logTable.innerHTML = "";
+          logTable.classList.remove("focus-mode");
           syncLogResetButtons();
           return;
         }
         const groupIds = Object.keys(GROUPS);
         if (!groupIds.length) {
           logTable.innerHTML = `<p class="muted">${copy.admin.noGroups}</p>`;
+          logTable.classList.remove("focus-mode");
           syncLogResetButtons();
           return;
         }
@@ -3059,9 +3213,48 @@
         saveLogLayout();
         const expandedGroupIds = groupIds.filter((id) => !collapsedLogGroups.has(id));
         const minimizedGroupIds = groupIds.filter((id) => collapsedLogGroups.has(id));
-        const orderedGroupIds = [...expandedGroupIds, ...minimizedGroupIds];
-
+        const focusMode = expandedGroupIds.length === 1 && groupIds.length > 1;
+        logTable.classList.toggle("focus-mode", focusMode);
         const fragment = document.createDocumentFragment();
+        const selectedGroupId = focusMode ? expandedGroupIds[0] : null;
+        const row = document.createElement("div");
+        row.className = "group-chip-row";
+
+        const showAllButton = document.createElement("button");
+        showAllButton.type = "button";
+        showAllButton.className = `ghost group-chip${collapsedLogGroups.size === 0 ? " active" : ""}`;
+        showAllButton.textContent = copy.admin.showAll || copy.admin.exportScopeAll;
+        showAllButton.setAttribute("aria-pressed", String(collapsedLogGroups.size === 0));
+        showAllButton.addEventListener("click", () => {
+          if (collapsedLogGroups.size === 0) return;
+          collapsedLogGroups.clear();
+          renderStaffLogs();
+        });
+        row.appendChild(showAllButton);
+
+        groupIds.forEach((groupId) => {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = `ghost group-chip${groupId === selectedGroupId ? " active" : ""}`;
+          chip.textContent = t("admin.groupLabel", { group: groupLabel(groupId) });
+          chip.setAttribute("aria-pressed", String(groupId === selectedGroupId));
+          chip.addEventListener("click", () => {
+            if (focusMode && groupId === selectedGroupId) return;
+            collapsedLogGroups.clear();
+            groupIds.forEach((id) => {
+              if (id !== groupId) collapsedLogGroups.add(id);
+            });
+            renderStaffLogs();
+          });
+          row.appendChild(chip);
+        });
+
+        fragment.appendChild(row);
+
+        let orderedGroupIds = [...expandedGroupIds, ...minimizedGroupIds];
+        if (focusMode) {
+          orderedGroupIds = [selectedGroupId];
+        }
         orderedGroupIds.forEach((groupId) => {
           const roster = adminRosterData.get(groupId) ?? [];
           const isCollapsed = collapsedLogGroups.has(groupId);
@@ -3752,6 +3945,7 @@
         );
       });
 
+      setFaqsCollapsed(faqsCollapsed, { persist: false });
       applyLanguage();
 
       emailInput.addEventListener("blur", attemptFullNamePrefill);
@@ -3863,6 +4057,12 @@
           if (confirmed) {
             resetLogsForGroups([...selectedLogGroups]);
           }
+        });
+      }
+
+      if (infoFaqToggleButton) {
+        infoFaqToggleButton.addEventListener("click", () => {
+          setFaqsCollapsed(!faqsCollapsed);
         });
       }
 
