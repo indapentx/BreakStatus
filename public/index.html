@@ -485,7 +485,7 @@
         margin: 0;
         display: flex;
         flex-direction: column;
-        gap: 0.8rem;
+        gap: 0.5rem;
       }
 
       .faq-row {
@@ -643,7 +643,7 @@
 
       .admin-groups {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        grid-template-columns: 1fr;
         gap: 1rem;
       }
 
@@ -680,9 +680,16 @@
       }
 
       .admin-group-body {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+
+      .admin-group-column {
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
+        min-width: 0;
       }
 
       .admin-group-card.minimized {
@@ -697,6 +704,21 @@
         height: 1px;
         width: 100%;
         background: var(--border);
+      }
+
+      .admin-group-divider-stack {
+        grid-column: 1 / -1;
+      }
+
+      @media (min-width: 768px) {
+        .admin-group-body {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 1rem;
+        }
+
+        .admin-group-divider-stack {
+          display: none;
+        }
       }
 
       .admin-logs {
@@ -2771,10 +2793,13 @@
           const body = document.createElement("div");
           body.className = "admin-group-body";
 
+          const breakColumn = document.createElement("div");
+          breakColumn.className = "admin-group-column";
+
           const onLabel = document.createElement("p");
           onLabel.className = "eyebrow";
           onLabel.textContent = copy.lists.onBreak;
-          body.appendChild(onLabel);
+          breakColumn.appendChild(onLabel);
 
           const onList = document.createElement("ul");
           onList.className = "status-list";
@@ -2782,16 +2807,16 @@
             (a, b) => getTimestampValue(a.joinedAt) - getTimestampValue(b.joinedAt)
           );
           populateList(onList, onSorted, onBreakEmptyText, { showJoinedAt: true });
-          body.appendChild(onList);
+          breakColumn.appendChild(onList);
 
           const divider = document.createElement("div");
           divider.className = "admin-group-divider";
-          body.appendChild(divider);
+          breakColumn.appendChild(divider);
 
           const offLabel = document.createElement("p");
           offLabel.className = "eyebrow";
           offLabel.textContent = copy.lists.working;
-          body.appendChild(offLabel);
+          breakColumn.appendChild(offLabel);
 
           const offList = document.createElement("ul");
           offList.className = "status-list";
@@ -2799,16 +2824,18 @@
             (a.email ?? "").localeCompare(b.email ?? "", undefined, { sensitivity: "base" })
           );
           populateList(offList, offSorted, workingEmptyText);
-          body.appendChild(offList);
+          breakColumn.appendChild(offList);
 
-          const dividerMeal = document.createElement("div");
-          dividerMeal.className = "admin-group-divider";
-          body.appendChild(dividerMeal);
+          const stackedDivider = document.createElement("div");
+          stackedDivider.className = "admin-group-divider admin-group-divider-stack";
+
+          const mealColumn = document.createElement("div");
+          mealColumn.className = "admin-group-column";
 
           const onMealLabel = document.createElement("p");
           onMealLabel.className = "eyebrow";
           onMealLabel.textContent = copy.lists.onMealBreak;
-          body.appendChild(onMealLabel);
+          mealColumn.appendChild(onMealLabel);
 
           const onMealList = document.createElement("ul");
           onMealList.className = "status-list";
@@ -2819,16 +2846,16 @@
             showJoinedAt: true,
             joinedAtKey: "mealJoinedAt",
           });
-          body.appendChild(onMealList);
+          mealColumn.appendChild(onMealList);
 
           const dividerMealOff = document.createElement("div");
           dividerMealOff.className = "admin-group-divider";
-          body.appendChild(dividerMealOff);
+          mealColumn.appendChild(dividerMealOff);
 
           const offMealLabel = document.createElement("p");
           offMealLabel.className = "eyebrow";
           offMealLabel.textContent = copy.lists.offMealBreak;
-          body.appendChild(offMealLabel);
+          mealColumn.appendChild(offMealLabel);
 
           const offMealList = document.createElement("ul");
           offMealList.className = "status-list";
@@ -2836,8 +2863,11 @@
             (a.email ?? "").localeCompare(b.email ?? "", undefined, { sensitivity: "base" })
           );
           populateList(offMealList, offMealSorted, offMealEmptyText);
-          body.appendChild(offMealList);
+          mealColumn.appendChild(offMealList);
 
+          body.appendChild(breakColumn);
+          body.appendChild(stackedDivider);
+          body.appendChild(mealColumn);
           card.appendChild(body);
           fragment.appendChild(card);
         });
