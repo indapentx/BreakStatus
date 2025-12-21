@@ -669,7 +669,7 @@
         align-items: center;
         gap: 0.5rem;
         overflow-x: auto;
-        padding: 0.15rem 0.05rem;
+        padding: 0 0.05rem;
       }
 
       .group-chip {
@@ -826,10 +826,6 @@
       .log-table {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
-        gap: 1rem;
-      }
-
-      .log-table.focus-mode {
         gap: 0.65rem;
       }
 
@@ -2830,14 +2826,12 @@
         const copy = getCopy();
         if (!isAdmin) {
           adminGroupsContainer.innerHTML = "";
-          adminGroupsContainer.classList.remove("focus-mode");
           return;
         }
 
         const groupIds = Object.keys(GROUPS);
         if (!groupIds.length) {
           adminGroupsContainer.innerHTML = `<p class="muted">${copy.admin.noGroups}</p>`;
-          adminGroupsContainer.classList.remove("focus-mode");
           return;
         }
 
@@ -2848,7 +2842,6 @@
         const expandedGroupIds = groupIds.filter((id) => !minimizedAdminGroups.has(id));
         const minimizedGroupIds = groupIds.filter((id) => minimizedAdminGroups.has(id));
         const focusMode = expandedGroupIds.length === 1 && groupIds.length > 1;
-        adminGroupsContainer.classList.toggle("focus-mode", focusMode);
         const fragment = document.createDocumentFragment();
         const selectedGroupId = focusMode ? expandedGroupIds[0] : null;
         const row = document.createElement("div");
@@ -3187,14 +3180,12 @@
         const copy = getCopy();
         if (!isAdmin) {
           logTable.innerHTML = "";
-          logTable.classList.remove("focus-mode");
           syncLogResetButtons();
           return;
         }
         const groupIds = Object.keys(GROUPS);
         if (!groupIds.length) {
           logTable.innerHTML = `<p class="muted">${copy.admin.noGroups}</p>`;
-          logTable.classList.remove("focus-mode");
           syncLogResetButtons();
           return;
         }
@@ -3210,7 +3201,6 @@
         const expandedGroupIds = groupIds.filter((id) => !collapsedLogGroups.has(id));
         const minimizedGroupIds = groupIds.filter((id) => collapsedLogGroups.has(id));
         const focusMode = expandedGroupIds.length === 1 && groupIds.length > 1;
-        logTable.classList.toggle("focus-mode", focusMode);
         const fragment = document.createDocumentFragment();
         const selectedGroupId = focusMode ? expandedGroupIds[0] : null;
         const row = document.createElement("div");
